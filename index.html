@@ -1,409 +1,1186 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESQUiRE by ThreadMinds | AI-Powered Systematic Reviews</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Darker text in the tab label -->
+  <title>ESQUiRE • Darker</title>
 
-    <style>
-        /* Custom Styles */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F0F4FF; /* A light blue-purple background */
-        }
+  <!-- Google font import -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
+    rel="stylesheet"
+  >
 
-        /* Hero section gradient background from the image */
-        .hero-gradient {
-            background-color: #D6D6F2; /* A base purple from the image */
-            background-image: radial-gradient(circle at 50% 50%, #FDECB9, #D6D6F2 70%);
-        }
+  <style>
+  :root {
+    --c-main: #3E206D;
+    --c-mid: #5A4182;
+    --c-light: #CABDF2;
+    --c-cream: #F8F3FF;
+    --c-accent: #FFC662;
 
-        /* Smooth scroll behavior */
-        html {
-            scroll-behavior: smooth;
-        }
+    --shadow-hover: 0 0 10px rgba(0,0,0,0.2);
+    --fast: 0.2s ease;
+    --pill-r: 999px;
 
-        /* Section header styling */
-        .section-header {
-            font-weight: 800;
-            color: #1a2753; /* Dark blue from image */
-        }
-        
-        /* Card styling with hover effect */
-        .feature-card, .team-card, .milestone-card, .competitor-card, .plan-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .feature-card:hover, .team-card:hover, .milestone-card:hover, .competitor-card:hover, .plan-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        }
-    </style>
+    /* Colors for operator pills */
+    --pill-and: #FFD90D;  /* Yellowish */
+    --pill-or:  #65E56E;  /* Greenish */
+    --pill-not: #F2766E;  /* Reddish */
+  }
+
+  /* === Intro Splash === */
+  #intro {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, var(--c-accent) 0%, var(--c-light) 40%, var(--c-cream) 100%);
+    z-index: 1000;
+    overflow: hidden;
+  }
+  .intro-elements {
+    opacity: 1;
+    /* CHANGED #3: lengthen the transition to 1.5s for a slower fade out. */
+    transition: opacity 1.5s, transform 1.5s;
+  }
+  .intro-elements.fade-out {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+
+  #brand-name {
+    font-size: 5rem;
+    letter-spacing: 3px;
+    color: #20304F;
+    margin: 0;
+    font-weight: 700;
+    text-shadow: 2px 3px 7px rgba(0,0,0,0.4);
+  }
+  #brand-subtitle {
+    margin-top: 0.3rem;
+    font-size: 1.25rem;
+    color: #fff;
+    font-weight: 300;
+    text-shadow: 1px 2px 3px rgba(0,0,0,0.2);
+    text-align: center;
+  }
+
+  #enter-btn {
+    margin-top: 2rem;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    padding: 1rem 3rem;
+    font-size: 1.15rem;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--c-main);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    font-weight: 600;
+    transition: transform 0.25s, box-shadow 0.25s, background 0.25s;
+  }
+  #enter-btn:hover {
+    transform: translateY(-3px);
+    background: #ffeacc;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  }
+
+  body {
+    margin: 0;
+    font-family: "Inter", sans-serif;
+    background: linear-gradient(135deg, var(--c-cream) 0%, var(--c-light) 100%);
+    min-height: 100vh;
+    color: var(--c-main);
+    display: flex;
+    flex-direction: column;
+  }
+
+  #app {
+    opacity: 0;
+    transition: opacity 1.5s;
+  }
+  #app.app-visible {
+    opacity: 1;
+  }
+
+  header {
+    background: #FAFAFA;
+    color: var(--c-main);
+    padding: 0.75rem 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: 0 2px 10px rgba(7, 0, 0, 0.1);
+    border-radius: 0 0 1.5rem 1.5rem;
+  }
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: 0.07rem;
+    position: relative;
+  }
+
+  #mode-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .mode-text {
+    font-weight: 600;
+    color: var(--c-main);
+    font-size: 1rem;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0;
+    background: var(--c-mid);
+    transition: 0.4s;
+    border-radius: 30px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: 0.4s;
+  }
+  .switch input:checked + .slider {
+    background: var(--c-accent);
+  }
+  .switch input:checked + .slider:before {
+    transform: translateX(30px);
+  }
+
+  #pico-inputs {
+    padding: 1rem 5%;
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    margin-bottom: 1rem;
+  }
+
+  .term-field {
+    background: #fff;
+    border: 2px solid var(--c-mid);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    animation: fadeInUp 0.4s ease forwards;
+    position: relative;
+    overflow: visible;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .term-field label {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+  }
+
+  /* #1: place the operator <select> on the "extreme right" of .term-field */
+  .bool-operator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem; /* pinned to the top right corner inside .term-field */
+    display: none; /* hidden unless advanced + after first keyword added */
+    font-size: 0.9rem;
+    border-radius: 4px;
+    border: 1px solid var(--c-mid);
+    background: #fff;
+    color: var(--c-main);
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    z-index: 999;
+  }
+  .bool-operator:focus {
+    outline: 2px dashed var(--c-mid);
+    outline-offset: 2px;
+  }
+
+  .term-field input {
+    padding: 0.55rem;
+    border: 1px solid var(--c-mid);
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .suggestions {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 2px);
+    max-height: 200px;
+    overflow: auto;
+    background: #fff;
+    border: 1px solid var(--c-mid);
+    z-index: 9999;
+    display: none;
+    border-radius: 0.25rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .suggestions.open {
+    display: block;
+    opacity: 1;
+    transform: none;
+  }
+  .suggestions li {
+    list-style: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: background var(--fast);
+  }
+  .suggestions li:hover {
+    background: var(--c-light);
+  }
+
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: var(--pill-r);
+    transition: box-shadow var(--fast);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  .pill:hover {
+    box-shadow: var(--shadow-hover);
+  }
+  .pill.keyword-pill {
+    background: var(--c-accent);
+    color: #fff;
+  }
+  .pill-operator {
+    color: #fff;
+  }
+  .pill-operator[data-op="AND"] {
+    background: var(--pill-and);
+  }
+  .pill-operator[data-op="OR"] {
+    background: var(--pill-or);
+  }
+  .pill-operator[data-op="NOT"] {
+    background: var(--pill-not);
+  }
+
+  .pill-close {
+    font-weight: 700;
+    margin-left: 0.25rem;
+    cursor: pointer;
+  }
+
+  #filters {
+    padding: 1rem 5%;
+    position: relative;
+    z-index: 0;
+    overflow: visible;
+  }
+
+  /* slow the accordion to 1.5s */
+  .accordion {
+    border: 2px solid var(--c-mid);
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    animation: fadeInUp 0.4s ease forwards;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    overflow: visible;
+  }
+  .accordion summary {
+    background: var(--c-mid);
+    color: #fff;
+    padding: 0.6rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+    outline: none;
+  }
+  .accordion[open] summary {
+    background: var(--c-accent);
+  }
+  .filter-list {
+    padding: 0.7rem 1rem;
+    display: grid;
+    gap: 0.4rem;
+    max-height: 0;
+    transition: max-height 1.5s ease;
+    overflow: visible;
+  }
+  .accordion[open] .filter-list {
+    max-height: 800px;
+  }
+  .filter-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .filter-item a {
+    margin-left: auto;
+    font-size: 0.9rem;
+    color: var(--c-main);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .filter-item a:hover {
+    color: var(--c-accent);
+  }
+
+  #search-btn {
+    margin: 1.5rem auto;
+    display: block;
+    font-size: 1.15rem;
+    padding: 0.8rem 1.6rem;
+    border-radius: 999px;
+    background: var(--c-mid);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+    font-weight: 600;
+  }
+  #search-btn:hover {
+    background: var(--c-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+  }
+
+  #results {
+    padding: 1rem 5%;
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+  .result-block {
+    background: #fff;
+    border: 2px solid var(--c-mid);
+    border-radius: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    animation: fadeInUp 0.5s ease forwards;
+    opacity: 0;
+  }
+  .result-block label {
+    background: var(--c-mid);
+    color: #fff;
+    padding: 0.35rem 0.7rem;
+    font-weight: 600;
+    border-radius: 0.5rem 0.5rem 0 0;
+  }
+  .result-block textarea {
+    flex: 1;
+    padding: 0.7rem;
+    font-family: monospace;
+    resize: both;
+    border: none;
+    font-size: 0.9rem;
+    color: var(--c-main);
+    width: 100%;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+  .result-actions {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.7rem;
+    border-top: 1px solid var(--c-mid);
+    background-color: #fafafa;
+    border-radius: 0 0 0.5rem 0.5rem;
+  }
+  .copy-btn,
+  .open-btn {
+    padding: 0.4rem 0.8rem;
+    background: var(--c-mid);
+    color: #fff;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background 0.25s, transform 0.25s;
+  }
+  .copy-btn:hover,
+  .open-btn:hover {
+    background: var(--c-accent);
+    transform: translateY(-2px);
+  }
+
+  .fade-reset {
+    animation: fadeReset 0.8s forwards ease-in;
+  }
+  @keyframes fadeReset {
+    0%   { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.85); }
+  }
+
+  #reset-btn {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 999px;
+    padding: 0.65rem 1.2rem;
+    background: var(--c-mid);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+  #reset-btn:hover {
+    background: var(--c-accent);
+  }
+
+  a:focus,
+  input:focus,
+  textarea:focus,
+  button:focus {
+    outline: 2px dashed var(--c-mid);
+    outline-offset: 2px;
+  }
+  .filter-op{
+  font-size:0.9rem;
+  border:1px solid var(--c-mid);
+  border-radius:4px;
+  background:#fff;
+  padding:0.1rem 0.4rem;
+  display:none;          /* shown only when advanced mode + checked */
+}
+  </style>
 </head>
-<body class="text-slate-700 antialiased">
 
-    <!-- Header -->
-    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
-        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="text-2xl font-bold text-slate-800">
-                ESQU<span class="text-indigo-600">i</span>RE
-            </div>
-            <div class="hidden md:flex items-center space-x-8 font-semibold">
-                <a href="#problem" class="hover:text-indigo-600 transition-colors">The Problem</a>
-                <a href="#solution" class="hover:text-indigo-600 transition-colors">Solution</a>
-                <a href="#features" class="hover:text-indigo-600 transition-colors">Advantage</a>
-                <a href="#milestones" class="hover:text-indigo-600 transition-colors">Milestones</a>
-                <a href="#team" class="hover:text-indigo-600 transition-colors">Team</a>
-                <a href="#contact" class="bg-indigo-600 text-white px-5 py-2 rounded-full hover:bg-indigo-700 transition-shadow shadow-lg hover:shadow-xl">Request Demo</a>
-            </div>
-             <div class="md:hidden">
-                <button id="menu-btn" class="text-slate-800 focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                </button>
-            </div>
-        </nav>
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden bg-white/95">
-            <a href="#problem" class="block py-2 px-4 text-sm hover:bg-gray-200">The Problem</a>
-            <a href="#solution" class="block py-2 px-4 text-sm hover:bg-gray-200">Solution</a>
-            <a href="#features" class="block py-2 px-4 text-sm hover:bg-gray-200">Advantage</a>
-            <a href="#milestones" class="block py-2 px-4 text-sm hover:bg-gray-200">Milestones</a>
-            <a href="#team" class="block py-2 px-4 text-sm hover:bg-gray-200">Team</a>
-            <a href="#contact" class="block py-3 px-4 text-sm bg-indigo-500 text-white text-center font-bold">Request Demo</a>
-        </div>
+<body>
+  <!-- INTRO SPLASH -->
+  <section id="intro">
+    <div class="intro-elements" id="intro-wrapper">
+      <h1 id="brand-name">ESQUiRE</h1>
+      <div id="brand-subtitle">by ThreadMinds Pvt. Ltd.</div>
+      <button id="enter-btn">Let&rsquo;s Search</button>
+    </div>
+  </section>
+
+  <!-- MAIN APP WRAPPER -->
+  <div id="app" hidden>
+    <header>
+      <h1 id="header-brand"></h1>
     </header>
 
+    <div id="mode-section">
+      <span class="mode-text">Quick&nbsp;Search</span>
+      <label class="switch">
+        <input type="checkbox" id="mode-toggle" aria-label="Toggle Advanced Search"/>
+        <span class="slider"></span>
+      </label>
+      <span class="mode-text">Advanced&nbsp;Search</span>
+    </div>
+
     <main>
-        <!-- Hero Section -->
-        <section class="hero-gradient">
-            <div class="container mx-auto px-6 text-center py-24 md:py-32 lg:py-40">
-                <h1 class="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight" style="color: #1a2753;">ESQU<span class="text-indigo-600">i</span>RE</h1>
-                <p class="mt-4 text-lg md:text-xl font-medium" style="color: #2c3e50;">by ThreadMinds Pvt. Ltd.</p>
-                <p class="mt-6 max-w-3xl mx-auto text-xl md:text-2xl text-slate-800/80">
-                    Revolutionizing systematic reviews with an end-to-end, AI-powered platform. Go from query to insight, faster and more reliably than ever before.
-                </p>
-                <div class="mt-10 flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                    <a href="#contact" class="bg-white text-slate-800 font-bold px-8 py-4 rounded-full shadow-2xl hover:bg-gray-100 transition-all text-lg transform hover:scale-105 w-full sm:w-auto">
-                        Let's Search
-                    </a>
-                    <a href="https://drive.google.com/drive/folders/1Poh-BKYTvho2EgZIDT_qWCasr1JtLiZh?usp=sharing" target="_blank" class="bg-transparent border-2 border-slate-700 text-slate-800 font-bold px-8 py-4 rounded-full shadow-xl hover:bg-white/30 transition-all text-lg transform hover:scale-105 w-full sm:w-auto">
-                        Watch Demo
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <!-- Problem Section -->
-        <section id="problem" class="py-20 bg-white">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                    <h2 class="text-4xl md:text-5xl section-header">Scaling a Mountain By Hand</h2>
-                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">The current process for systematic reviews is a manual, fragmented, and exhausting grind that slows discovery and risks missing critical evidence.</p>
-                </div>
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                        <h3 class="font-bold text-xl text-slate-800">Fragmented Search</h3>
-                        <p class="mt-2 text-slate-600">Wrestling with disparate databases, bespoke search syntaxes, and hunting down obscure synonyms across multiple platforms.</p>
-                    </div>
-                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                        <h3 class="font-bold text-xl text-slate-800">Manual Drudgery</h3>
-                        <p class="mt-2 text-slate-600">Poring over thousands of abstracts, painstakingly weeding out duplicates, and manually extracting data from text, tables, and figures.</p>
-                    </div>
-                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                        <h3 class="font-bold text-xl text-slate-800">Error-Prone & Subjective</h3>
-                        <p class="mt-2 text-slate-600">Facing subjective, error-prone bias assessments with no reliable automation and double-checking every number by hand.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Solution Section -->
-        <section id="solution" class="py-20 bg-slate-100">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                    <h2 class="text-4xl md:text-5xl section-header">The Unified, Semi-Automated Workflow</h2>
-                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">ESQUiRE unifies search, screening, extraction, validation, and bias assessment into a single, seamless engine so you can focus on insight, not busywork.</p>
-                </div>
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <div class="feature-card bg-white p-6 rounded-xl shadow-lg text-center">
-                        <div class="bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10l-4 4m4-4l4 4"/></svg>
-                        </div>
-                        <h3 class="font-bold text-xl mt-4 text-slate-800">PICO-Driven Search</h3>
-                        <p class="mt-2 text-slate-600">Translate one query into optimized searches across 5 major databases automatically.</p>
-                    </div>
-                    <div class="feature-card bg-white p-6 rounded-xl shadow-lg text-center">
-                         <div class="bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                        </div>
-                        <h3 class="font-bold text-xl mt-4 text-slate-800">AI-Powered Screening</h3>
-                        <p class="mt-2 text-slate-600">Accelerate abstract review with smart suggestions and PICO-based keyword filters.</p>
-                    </div>
-                    <div class="feature-card bg-white p-6 rounded-xl shadow-lg text-center">
-                         <div class="bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        </div>
-                        <h3 class="font-bold text-xl mt-4 text-slate-800">Validated Extraction</h3>
-                        <p class="mt-2 text-slate-600">Hybrid extractor pulls data into structured sets, with mandatory validation for accuracy.</p>
-                    </div>
-                    <div class="feature-card bg-white p-6 rounded-xl shadow-lg text-center">
-                         <div class="bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
-                        <h3 class="font-bold text-xl mt-4 text-slate-800">ML-Augmented RoB</h3>
-                        <p class="mt-2 text-slate-600">Generate risk-of-bias assessments for diverse study designs, trained on expert-annotated corpora.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Advantage / How it works Section -->
-        <section id="features" class="py-20 bg-white">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                     <h2 class="text-4xl md:text-5xl section-header">The ESQUiRE Advantage</h2>
-                     <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">We don't just solve a piece of the puzzle. We are the only solution that weaves every step together.</p>
-                </div>
-
-                <div class="grid md:grid-cols-2 gap-16 items-center">
-                    <div>
-                        <h3 class="text-3xl font-bold text-slate-800">A True End-to-End Platform</h3>
-                        <p class="mt-4 text-lg text-slate-600">While competitors offer piecemeal solutions—a syntax converter here, a deduplicator there—ESQUiRE provides a single, cohesive workflow. From intelligent query translation to ML-backed analysis, we connect the dots so you don't have to.</p>
-                        <ul class="mt-6 space-y-4">
-                            <li class="flex items-start">
-                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                <span><strong>Real-time Federated Search:</strong> Execute searches across 5 major databases and see deduplicated counts upfront.</span>
-                            </li>
-                             <li class="flex items-start">
-                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                <span><strong>Enforced Checkbox Validation:</strong> Guarantee data accuracy with a mandatory validation step for every extracted field.</span>
-                            </li>
-                             <li class="flex items-start">
-                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                <span><strong>Rigorously Benchmarked:</strong> Our performance is transparently validated against expert workflows and gold-standard reference sets.</span>
-                            </li>
-                        </ul>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="competitor-card p-6 bg-rose-50 border border-rose-200 rounded-xl">
-                            <h4 class="font-bold text-rose-800">Syntax Converters</h4>
-                            <p class="text-sm text-rose-600 mt-1">Struggle with nuanced thesauri and don't execute searches.</p>
-                        </div>
-                         <div class="competitor-card p-6 bg-amber-50 border border-amber-200 rounded-xl">
-                            <h4 class="font-bold text-amber-800">Reference Managers</h4>
-                            <p class="text-sm text-amber-600 mt-1">Only deduplicate *after* you manually gather results.</p>
-                        </div>
-                         <div class="competitor-card p-6 bg-sky-50 border border-sky-200 rounded-xl">
-                            <h4 class="font-bold text-sky-800">Full-Service Platforms</h4>
-                            <p class="text-sm text-sky-600 mt-1">Still leave you importing, screening, and extracting by hand.</p>
-                        </div>
-                        <div class="p-6 bg-indigo-600 text-white rounded-xl shadow-lg">
-                             <h4 class="font-bold">ESQUiRE</h4>
-                            <p class="text-sm mt-1 opacity-90">Integrates all steps into one seamless, validated workflow.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Milestones Section -->
-        <section id="milestones" class="py-20 bg-slate-100">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                    <h2 class="text-4xl md:text-5xl section-header">Our Journey So Far</h2>
-                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">From a bootstrapped prototype to a scientifically validated platform, our progress is built on a solid foundation.</p>
-                </div>
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <div class="milestone-card bg-white p-6 rounded-xl shadow-md">
-                        <h3 class="font-bold text-xl text-indigo-600">Lab-Scale Prototype</h3>
-                        <p class="mt-2 text-slate-600">Successfully bootstrapped and built a working prototype, proving the core concept.</p>
-                    </div>
-                    <div class="milestone-card bg-white p-6 rounded-xl shadow-md">
-                        <h3 class="font-bold text-xl text-indigo-600">Workflow Validation</h3>
-                        <p class="mt-2 text-slate-600">Validated all core modules against real-world systematic review workflows.</p>
-                    </div>
-                    <div class="milestone-card bg-white p-6 rounded-xl shadow-md">
-                        <h3 class="font-bold text-xl text-indigo-600">Exceeded Benchmarks</h3>
-                        <p class="mt-2 text-slate-600">Early prototypes match or exceed manual workflows in both speed and fidelity.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Business Model -->
-        <section class="py-20 bg-white">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                    <h2 class="text-4xl md:text-5xl section-header">Flexible Pricing for Every Team</h2>
-                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Our SaaS model is designed to support everyone from individual academics to large enterprise teams.</p>
-                </div>
-                <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                    <div class="plan-card border-2 border-slate-200 p-8 rounded-2xl text-center">
-                        <h3 class="text-2xl font-bold">Academic</h3>
-                        <p class="text-slate-500 mt-2">For students & educators</p>
-                        <p class="text-4xl font-extrabold text-slate-800 my-6">Free</p>
-                        <p class="text-slate-600">Get started with our core features to accelerate your research.</p>
-                    </div>
-                    <div class="plan-card border-2 border-indigo-600 p-8 rounded-2xl text-center shadow-2xl relative">
-                        <span class="bg-indigo-600 text-white text-xs font-bold uppercase px-3 py-1 rounded-full absolute top-0 -translate-y-1/2">Most Popular</span>
-                        <h3 class="text-2xl font-bold">Professional</h3>
-                        <p class="text-slate-500 mt-2">For individual researchers</p>
-                        <p class="text-4xl font-extrabold text-slate-800 my-6">$15<span class="text-lg font-medium text-slate-500">/mo</span></p>
-                        <p class="text-slate-600">Unlock advanced features and premium support for your projects.</p>
-                    </div>
-                    <div class="plan-card border-2 border-slate-200 p-8 rounded-2xl text-center">
-                        <h3 class="text-2xl font-bold">Enterprise</h3>
-                        <p class="text-slate-500 mt-2">For institutions & companies</p>
-                        <p class="text-4xl font-extrabold text-slate-800 my-6">Custom</p>
-                        <p class="text-slate-600">Site-wide licenses, team management, and dedicated support.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Financial Projections Section -->
-        <section class="py-20 bg-slate-100">
-             <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                    <h2 class="text-4xl md:text-5xl section-header">A Strong Growth Trajectory</h2>
-                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Projected to capture a significant share of a rapidly growing market through our unique value proposition.</p>
-                </div>
-                <div class="bg-white p-8 rounded-2xl shadow-lg max-w-4xl mx-auto">
-                    <div class="flex flex-col md:flex-row justify-around items-center text-center gap-8">
-                        <div>
-                            <p class="text-5xl font-extrabold text-indigo-600">$338M</p>
-                            <p class="mt-1 font-semibold text-slate-600">Market Size (2025)</p>
-                        </div>
-                         <div>
-                            <p class="text-5xl font-extrabold text-indigo-600">$13.5M</p>
-                            <p class="mt-1 font-semibold text-slate-600">Projected ARR by 2030</p>
-                        </div>
-                        <div>
-                            <p class="text-5xl font-extrabold text-indigo-600">&gt;150%</p>
-                            <p class="mt-1 font-semibold text-slate-600">Early CAGR</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Team Section -->
-        <section id="team" class="py-20 bg-white">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                    <h2 class="text-4xl md:text-5xl section-header">The Minds Behind the Mission</h2>
-                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Founded by medical doctors turned innovation-driven technologists with deep expertise in clinical workflows, biostatistics, and machine learning.</p>
-                </div>
-                <div class="flex flex-wrap justify-center gap-10">
-                    <!-- Team Member 1 -->
-                    <div class="team-card bg-slate-50 p-8 rounded-2xl shadow-xl text-center w-full max-w-sm border border-slate-200">
-                        <img class="w-28 h-28 rounded-full mx-auto -mt-16 border-4 border-white shadow-lg" src="https://placehold.co/128x128/7E8EFB/FFFFFF?text=VG" alt="Dr. Victor Ghosh" onerror="this.onerror=null;this.src='https://placehold.co/128x128/E2E8F0/475569?text=VG';">
-                        <h3 class="text-2xl font-bold mt-4 text-slate-800">Dr. Victor Ghosh</h3>
-                        <p class="font-semibold text-indigo-600">Co-founder</p>
-                        <p class="mt-2 text-slate-600 text-sm">Innovation Fellow at SiB AIIMS New Delhi, applying the Stanford Biodesign framework to channel clinical insights into robust product features.</p>
-                        <div class="mt-4 flex justify-center space-x-4">
-                            <a href="https://www.linkedin.com/in/victor-ghosh-058b06164/" target="_blank" class="text-slate-400 hover:text-indigo-600">
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                            </a>
-                            <a href="https://scholar.google.com/citations?user=n6SPwNkAAAAJ&hl=en" target="_blank" class="text-slate-400 hover:text-indigo-600">
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5.242 13.769L0 9.5L12 0l12 9.5l-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14a7 7 0 0 0 0-14z"/></svg>
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Team Member 2 -->
-                    <div class="team-card bg-slate-50 p-8 rounded-2xl shadow-xl text-center w-full max-w-sm border border-slate-200">
-                        <img class="w-28 h-28 rounded-full mx-auto -mt-16 border-4 border-white shadow-lg" src="https://placehold.co/128x128/FDECB9/333333?text=AB" alt="Dr. Aman Bhonsale" onerror="this.onerror=null;this.src='https://placehold.co/128x128/E2E8F0/475569?text=AB';">
-                        <h3 class="text-2xl font-bold mt-4 text-slate-800">Dr. Aman Bhonsale</h3>
-                        <p class="font-semibold text-indigo-600">Co-founder</p>
-                        <p class="mt-2 text-slate-600 text-sm">AIIMS Nagpur alumnus, bringing a blend of rigorous medical training, hands-on research experience, and strong expertise in biostatistics and ML.</p>
-                        <div class="mt-4 flex justify-center space-x-4">
-                           <a href="https://www.linkedin.com/in/dr-aman-bhonsale-249829278/" target="_blank" class="text-slate-400 hover:text-indigo-600">
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                            </a>
-                            <a href="https://scholar.google.com/citations?hl=en&user=ymH_K1IAAAAJ" target="_blank" class="text-slate-400 hover:text-indigo-600">
-                               <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5.242 13.769L0 9.5L12 0l12 9.5l-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14a7 7 0 0 0 0-14z"/></svg>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Contact Section -->
-        <section id="contact" class="py-20 bg-slate-100">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                    <h2 class="text-4xl md:text-5xl section-header">Ready to Revolutionize Your Research?</h2>
-                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Request a demo to see ESQUiRE in action or join our beta program to get early access.</p>
-                </div>
-                <div class="max-w-xl mx-auto bg-white p-8 sm:p-12 rounded-2xl shadow-2xl">
-                    <form>
-                        <div class="space-y-6">
-                            <div>
-                                <label for="name" class="font-semibold text-slate-800">Full Name</label>
-                                <input type="text" id="name" class="mt-2 w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Dr. Jane Doe">
-                            </div>
-                             <div>
-                                <label for="email" class="font-semibold text-slate-800">Email Address</label>
-                                <input type="email" id="email" class="mt-2 w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="jane.doe@research.edu">
-                            </div>
-                            <div>
-                                <label for="institution" class="font-semibold text-slate-800">Institution / Company</label>
-                                <input type="text" id="institution" class="mt-2 w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="University of Science">
-                            </div>
-                            <div>
-                                <label for="message" class="font-semibold text-slate-800">Message</label>
-                                <textarea id="message" rows="4" class="mt-2 w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="I'm interested in the enterprise plan..."></textarea>
-                            </div>
-                            <div>
-                                <button type="submit" class="w-full bg-indigo-600 text-white font-bold text-lg py-4 rounded-lg hover:bg-indigo-700 transition-colors shadow-lg">Request a Demo</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </section>
+      <section id="pico-inputs"></section>
+      <section id="filters"></section>
+      <button id="search-btn" disabled>Search</button>
+      <section id="results" hidden></section>
+      <button id="reset-btn" style="display:none;margin:1rem auto;">Reset</button>
     </main>
-    
-    <!-- Footer -->
-    <footer class="bg-slate-800 text-slate-300">
-        <div class="container mx-auto px-6 py-8 text-center">
-            <p>&copy; 2025 ThreadMinds Pvt. Ltd. All Rights Reserved.</p>
-            <p class="text-sm text-slate-400 mt-2">ESQUiRE - Electronic Search QUery Retrieval system</p>
-             <div class="mt-4">
-                <a href="https://threadminds.org" target="_blank" class="hover:text-white transition-colors">threadminds.org</a>
-            </div>
-        </div>
-    </footer>
+  </div><!-- /app -->
 
-    <script>
-        // JavaScript for mobile menu toggle
-        const menuBtn = document.getElementById('menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
+  <script type="module">
+  const introWrapper = document.getElementById("intro-wrapper");
+  const intro = document.getElementById("intro");
+  const enterBtn = document.getElementById("enter-btn");
+  const brand = document.getElementById("brand-name");
+  const app = document.getElementById("app");
+  const headerBrand = document.getElementById("header-brand");
+  const modeToggle = document.getElementById("mode-toggle");
+  const searchBtn = document.getElementById("search-btn");
+  const resetBtn = document.getElementById("reset-btn");
+  const resultsSection = document.getElementById("results");
+  const picoSection = document.getElementById("pico-inputs");
+  
+const FIELDS = ["Population","Intervention","Control","Outcome"];
+const state = {};
+   // Track one active filter per DB in quick mode
+   const activeFilter = { PubMed: null, Embase: null, Scopus: null, Cochrane: null };
+   // Track operator selections in advanced mode: { db: [ {id, opSel}, ... ] }
+   const filterOps = { PubMed: [], Embase: [], Scopus: [], Cochrane: [] };
 
-        menuBtn.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
+// Use local FastAPI during development; swap to the funnel URL when deployed.
+const API_BASE = "https://mach1.tail0510c7.ts.net";
 
-        // Close mobile menu when a link is clicked
-        const mobileMenuLinks = mobileMenu.getElementsByTagName('a');
-        for (let link of mobileMenuLinks) {
-            link.addEventListener('click', () => {
-                mobileMenu.classList.add('hidden');
-            });
+/* ------------------------------------------------------------------ */
+/* Build the four PICO term fields with inputs, suggestions, pills    */
+/* ------------------------------------------------------------------ */
+function initFields(){
+  FIELDS.forEach(field=>{
+    const wrapper=document.createElement("div");
+    wrapper.className="term-field";
+    wrapper.innerHTML=`
+      <label>${field}</label>
+      <select class="bool-operator">
+        <option value="AND">AND</option>
+        <option value="OR">OR</option>
+        <option value="NOT">NOT</option>
+      </select>
+      <input type="text" placeholder="Type ${field} term"/>
+      <ul class="suggestions"></ul>
+      <div class="pills"></div>
+    `;
+    picoSection.appendChild(wrapper);
+    // keep reference so validate() can access its operator select
+    state[field].wrapper = wrapper;
+
+    const input = wrapper.querySelector("input");
+    const sugg  = wrapper.querySelector(".suggestions");
+    const selInit = wrapper.querySelector('.bool-operator');
+    selInit.dataset.active = "false";   // start inactive
+
+    let tID;
+    input.addEventListener("input", e=>{
+      const val = input.value.trim();
+      const parts = val.split(/\s+/);
+      if(!val || (parts.length<2 && val.length<2)){
+        sugg.classList.remove("open");
+        wrapper.style.zIndex="auto";
+        return;
+      }
+      clearTimeout(tID);
+      tID = setTimeout(()=>fetchSuggest(val.toLowerCase(), sugg, input, wrapper),300);
+    });
+
+    // accept on click
+    sugg.addEventListener("click", ev=>{
+      if(ev.target.tagName==="LI" && !ev.target.textContent.startsWith("—")){
+        acceptTerm(field, ev.target.textContent, wrapper, input, sugg);
+      }
+    });
+
+    // accept on Enter
+    input.addEventListener("keydown", ev=>{
+      if(ev.key==="Enter" && sugg.classList.contains("open")){
+        const first = sugg.querySelector("li");
+        if(first && !first.textContent.startsWith("—")){
+          ev.preventDefault();
+          acceptTerm(field, first.textContent, wrapper, input, sugg);
         }
-    </script>
+      }
+    });
+  });
+}
 
+  FIELDS.forEach(f => state[f] = { terms: [] });
+
+  let advanced = false;
+
+  // Fade out intro
+  enterBtn.addEventListener("click", ()=>{
+    introWrapper.classList.add("fade-out");
+    setTimeout(()=>{
+      headerBrand.appendChild(brand);
+      intro.remove();
+      app.hidden = false;
+      app.classList.add("app-visible");
+    }, 1500); // match 1.5s from the .intro-elements transition
+  });
+
+  modeToggle.addEventListener("change", ()=>{
+    advanced = modeToggle.checked;
+    updateMode();
+  });
+  searchBtn.addEventListener("click", assembleQueries);
+
+  resetBtn.addEventListener("click", ()=>{
+    resultsSection.classList.add("fade-reset");
+    setTimeout(()=>{
+      resultsSection.classList.remove("fade-reset");
+      FIELDS.forEach(f => state[f].terms = []);
+      document.querySelectorAll('input[type="text"]').forEach(i => i.value="");
+      document.querySelectorAll(".pills").forEach(p => p.innerHTML="");
+      document.querySelectorAll('#filters input[type="checkbox"]').forEach(c => c.checked=false);
+      resultsSection.innerHTML="";
+      resultsSection.hidden=true;
+      resetBtn.style.display="none";
+      resetBtn.style.opacity="0";
+      validate();
+    },800);
+  });
+
+  document.addEventListener("keydown",(e)=>{
+    // block SHIFT+Enter from submitting
+    if(e.shiftKey && e.key==="Enter") e.preventDefault();
+  });
+
+  initFields();
+  initFilters();
+
+  function initFilters(){
+  const filtersSec=document.getElementById("filters");
+  const data=getFilters();
+  for(const [db,list] of Object.entries(data)){
+    const det=document.createElement("details");
+    det.className="accordion";
+    det.innerHTML=`<summary>${db} filters</summary><div class="filter-list"></div>`;
+    const flist=det.querySelector(".filter-list");
+
+    list.forEach(f=>{
+      const row=document.createElement("div");
+      row.className="filter-item";
+
+      // inline operator select (hidden by default)
+      const opSel=document.createElement("select");
+      opSel.className="filter-op";
+      opSel.innerHTML=`<option value="AND">AND</option>
+                       <option value="OR">OR</option>
+                       <option value="NOT">NOT</option>`;
+      row.appendChild(opSel);
+
+      const val="`"+f.query+"`";
+      row.innerHTML+=`
+        <label style="flex:1 1 auto;">
+          <input type="checkbox" data-db="${db}" value='${val}'>
+          ${f.title}
+        </label>
+        <a href="${f.ref}" target="_blank" aria-label="Reference for ${f.title}">↗</a>
+      `;
+      // keep operator select before the link
+      row.insertBefore(opSel,row.querySelector('a'));
+
+      const chk=row.querySelector('input[type="checkbox"]');
+
+      chk.addEventListener("change",()=>{
+        if(!advanced){
+          // QUICK MODE: enforce single filter per DB
+          if(chk.checked){
+            const prev=activeFilter[db];
+            if(prev && prev!==chk){
+              prev.checked=false;
+              prev.closest('.filter-item').querySelector('.filter-op').style.display='none';
+            }
+            activeFilter[db]=chk;
+          } else if(activeFilter[db]===chk){
+            activeFilter[db]=null;
+          }
+          opSel.style.display="none";
+        } else {
+          // ADVANCED MODE: allow many, each with its own operator
+          if(chk.checked){
+            opSel.style.display = filterOps[db].length ? "inline-block":"none";
+            filterOps[db].push({id:val, opSel});
+          } else {
+            opSel.style.display="none";
+            filterOps[db] = filterOps[db].filter(o=>o.id!==val);
+          }
+          refreshOps(db);  // ensure first filter has no operator
+        }
+      });
+
+      // keep reference updated on operator change
+      opSel.addEventListener("change",()=>{/* stored by reference */});
+
+      flist.appendChild(row);
+    });
+
+    filtersSec.appendChild(det);
+  }
+}
+
+function refreshOps(db){
+  // hide operator on first filter, show on subsequent ones
+  filterOps[db].forEach((o, idx)=>{
+    if(o.opSel) o.opSel.style.display = idx===0 ? "none" : "inline-block";
+  });
+}
+
+  async function fetchSuggest(text, sugg, input, wrapper){
+    try{
+      const r = await fetch(`${API_BASE}/crossmap?term=${encodeURIComponent(text)}`);
+      if(r.ok){
+        const data = await r.json();
+      const sugObj = data.suggestions || { normal: [], abbr: [] };
+      const normals = sugObj.normal || [];
+      const abbrevs = sugObj.abbr || [];
+
+      sugg.innerHTML = "";
+
+      /* --- normal suggestions (already capped at 10 by backend) --- */
+      normals.forEach(t => {
+        const li = document.createElement("li");
+        li.tabIndex = 0;
+        li.textContent = t;
+        sugg.appendChild(li);
+      });
+
+      /* --- optional abbreviation section (max 5) --- */
+      if (abbrevs.length) {
+        const sep = document.createElement("li");
+        sep.textContent = "— abbreviations —";
+        sep.style.fontStyle = "italic";
+        sep.style.cursor = "default";
+        sep.style.background = "#f4f4f4";
+        sugg.appendChild(sep);
+
+        abbrevs.forEach(t => {
+          const li = document.createElement("li");
+          li.tabIndex = 0;
+          li.textContent = t;
+          sugg.appendChild(li);
+        });
+      }
+
+      const hasAny = normals.length || abbrevs.length;
+      sugg.classList.toggle("open", hasAny);
+      wrapper.style.zIndex = hasAny ? "9999" : "auto";
+      }
+    }catch(e){}
+  }
+
+  async function acceptTerm(field, term, wrapper, input, sugg){
+    // fetch queries
+    let queries=null;
+    try{
+      const r = await fetch(`${API_BASE}/crossmap?term=${encodeURIComponent(term)}`);
+      if(r.ok){
+        const d=await r.json();
+        queries=d.queries||null;
+      }
+    }catch(e){}
+
+    const pillsDiv=wrapper.querySelector(".pills");
+    const sel=wrapper.querySelector(".bool-operator");
+    const st=state[field];
+
+    if(!advanced){
+      // quick => single pill
+      st.terms=[{term, op:"AND", queries}];
+      pillsDiv.innerHTML="";
+      addKeywordPill(pillsDiv, term, "AND", field);
+    } else {
+      // advanced => chain
+      if(!st.terms.length){
+        // first term => no preceding operator
+        st.terms.push({term, op:"", queries});
+        pillsDiv.innerHTML="";
+        addKeywordPill(pillsDiv, term, "", field);
+
+        // show operator select immediately for potential next term
+        sel.value = "AND";
+        sel.style.display = "inline-block";
+        sel.dataset.active = "true";
+      } else {
+        const op=sel.value||"AND";
+        st.terms.push({term, op, queries});
+        // operator pill + keyword pill
+        addOperatorPill(pillsDiv, op);
+        addKeywordPill(pillsDiv, term, op, field);
+        sel.style.display = "inline-block";
+      }
+    }
+
+    input.value="";
+    sugg.classList.remove("open");
+    validate();
+  }
+
+  function addOperatorPill(container, op){
+    const p=document.createElement("span");
+    p.className="pill pill-operator";
+    p.dataset.op=op;
+    p.textContent=op;
+    container.appendChild(p);
+  }
+
+  function addKeywordPill(container, term, op, field){
+    const pill=document.createElement("span");
+    pill.className="pill keyword-pill";
+    pill.innerHTML=`
+      <span class="pill-text">(${term})</span>
+      <span class="pill-close">×</span>
+    `;
+    pill.addEventListener("click",(e)=>{
+      if(e.target.classList.contains("pill-close")){
+        removeKeyword(field, term, op, container, pill);
+        e.stopPropagation();
+      }
+    });
+    container.appendChild(pill);
+  }
+
+  /* Hide & reset the inline operator <select> inside a term-field wrapper */
+  function hideOperatorSelect(wrapper){
+    const sel = wrapper.querySelector('.bool-operator');
+    if(sel){
+      sel.style.display = 'none';
+      sel.value = 'AND';   // restore default
+      sel.dataset.active = "false";
+    }
+  }
+
+  function removeKeyword(field, term, op, container, pillEl){
+    const arr = state[field].terms;
+    const idx = arr.findIndex(t => t.term === term && t.op === op);
+    if(idx >= 0){
+      if(idx > 0){
+        /* Case 1: deleting any term that is NOT the first —
+           remove the operator pill immediately *before* it */
+        const i = [...container.children].indexOf(pillEl);
+        if(i > 0){
+          const prev = container.children[i-1];
+          if(prev.classList.contains("pill-operator")){
+            container.removeChild(prev);
+          }
+        }
+      } else {
+        /* Case 2: deleting the FIRST term —
+           remove the operator pill immediately *after* it
+           and clear the op of what becomes the new first term */
+        const i = [...container.children].indexOf(pillEl);
+        const next = container.children[i+1];
+        if(next && next.classList.contains("pill-operator")){
+          container.removeChild(next);
+        }
+        if(state[field].terms.length > 1){
+          state[field].terms[1].op = "";  // new first term has no leading op
+        }
+      }
+      // finally, remove the term object itself
+      state[field].terms.splice(idx, 1);
+    }
+    container.removeChild(pillEl);
+    /* If the field now has *no* keyword pills left (regardless of state array
+       discrepancies), hide & reset the operator select. */
+    if(!container.querySelector('.keyword-pill')){
+      hideOperatorSelect(container.parentElement);
+      // also make sure state array is fully cleared
+      state[field].terms = [];
+    }
+    validate();
+  }
+
+function updateMode(){
+  advanced=modeToggle.checked;
+  FIELDS.forEach(f=>state[f].terms=[]);
+  document.querySelectorAll(".pills").forEach(p=>p.innerHTML="");
+  searchBtn.textContent=advanced?"Advanced Search":"Search";
+  // hide <select>
+  document.querySelectorAll(".bool-operator").forEach(sel=>{
+    sel.style.display="none";
+  });
+  /* --- NEW: reset filters, results, and buttons on mode switch --- */
+  // clear all filter checkboxes
+  document.querySelectorAll('#filters input[type="checkbox"]').forEach(chk=>{
+    chk.checked = false;
+  });
+  // reset tracking objects
+  for(const db in activeFilter) activeFilter[db] = null;
+  for(const db in filterOps)    filterOps[db] = [];
+
+  // hide any inline filter operator selects
+  document.querySelectorAll('.filter-op').forEach(sel=>{
+    sel.style.display = 'none';
+  });
+
+  // clear and hide results
+  resultsSection.innerHTML = "";
+  resultsSection.hidden = true;
+
+  // hide reset button
+  resetBtn.style.display = "none";
+  resetBtn.style.opacity = "0";
+
+  // reset operator visibility & tracking on mode switch (legacy)
+  document.querySelectorAll('.filter-op').forEach(sel=>{
+    const chk = sel.parentElement.querySelector('input[type="checkbox"]');
+    sel.style.display = (advanced && chk.checked) ? 'inline-block' : 'none';
+  });
+  if(!advanced){
+    for(const db in filterOps) filterOps[db] = [];
+  }
+  validate();
+}
+
+  function validate(){
+    let ready=false;
+    for(const f of FIELDS){
+      if(state[f].terms.length>0){
+        ready=true; break;
+      }
+    }
+    searchBtn.disabled=!ready;
+    // Per-field operator visibility
+    FIELDS.forEach(ff=>{
+      const wr = state[ff].wrapper;
+      if(!wr) return;
+
+      const sel = wr.querySelector('.bool-operator');
+      if(!sel) return;
+
+      if(state[ff].terms.length === 0){
+        // No keywords → force‑reset operator
+        hideOperatorSelect(wr);            // hides + sets active=false
+      } else {
+        // At least one keyword → ensure operator flagged active
+        sel.dataset.active = "true";
+        sel.style.display = advanced ? 'inline-block' : 'none';
+      }
+    });
+  }
+
+  // helper: find the correct query key for a DB
+  function dbKey(qObj, db){
+    if(!qObj)return"";
+    const variants=[
+      `${db}_Search_Query`,
+      `${db.charAt(0).toUpperCase()+db.slice(1).toLowerCase()}_Search_Query`,
+      `${db.toLowerCase()}_search_query`
+    ];
+    for(const v of variants){
+      if(v in qObj) return qObj[v];
+    }
+    return "";
+  }
+
+  // #2: new bracket logic => each new operator merges with previous accum => 
+  // e.g. Terms: [ {term:'A', op:''}, {term:'B', op:'OR'}, {term:'C', op:'NOT'} ]
+  // => ((A OR B) NOT C)
+  function assembleQueries(){
+    const perDB={PubMed:[],Embase:[],Scopus:[],Cochrane:[]};
+
+    FIELDS.forEach(f=>{
+      const arr=state[f].terms;
+      if(!arr.length)return;
+
+      if(!advanced){
+        // single bracket
+        const q=arr[0].queries;
+        for(const db in perDB){
+          const seg=dbKey(q,db);
+          if(seg) perDB[db].push(`(${seg})`);
+        }
+      } else {
+        // advanced => left associative
+        // accum => if no item => empty
+        // 1st => (seg)
+        // 2nd => "(" + accum + " op seg )"
+        // e.g. if user did A, op=OR, B, op=NOT, C => => ((A OR B) NOT C)
+        const block={PubMed:"", Embase:"", Scopus:"", Cochrane:""};
+        for(let i=0;i<arr.length;i++){
+          const t=arr[i];
+          for(const db in block){
+            const seg=dbKey(t.queries, db);
+            if(!seg) continue;
+            if(i===0){
+              // first => (seg)
+              block[db]=`(${seg})`;
+            } else {
+              block[db] = `(${block[db]} ${t.op} (${seg}))`;
+            }
+          }
+        }
+        for(const db in block){
+          if(block[db]) perDB[db].push(block[db]);
+        }
+      }
+    });
+
+  // -------- FILTERS ----------
+  if(!advanced){
+    // QUICK MODE: at most one per DB, combine with AND
+    const checks=document.querySelectorAll('#filters input[type="checkbox"]:checked');
+    checks.forEach(chk=>{
+      const db=chk.dataset.db;
+      const raw=chk.value.replace(/`/g,"");
+      perDB[db].push(`(${raw})`);
+    });
+  } else {
+    // ADVANCED MODE: chain filters within each DB using per-filter operator
+    const ordered=[];
+    document.querySelectorAll('#filters input[type="checkbox"]').forEach(chk=>{
+      if(chk.checked) ordered.push(chk);
+    });
+    ordered.forEach(chk=>{
+      const db=chk.dataset.db;
+      const val=chk.value.replace(/`/g,"");
+      const opSel=chk.closest('.filter-item').querySelector('.filter-op');
+      const op=opSel?opSel.value:"AND";
+      if(!perDB[db]) perDB[db]=[];
+      perDB[db].push({val,op});
+    });
+    for(const db in perDB){
+      const arr=perDB[db];
+      if(!arr.length) continue;
+      let clause=`(${arr[0].val})`;
+      for(let i=1;i<arr.length;i++){
+        clause=`(${clause} ${arr[i].op} (${arr[i].val}))`;
+      }
+      perDB[db]=[clause]; // compress to single string
+    }
+  }
+
+    for(const db in perDB){
+      perDB[db]= perDB[db].join(" AND ");
+    }
+    if(Object.values(perDB).every(s=>!s.trim())){
+      alert("Nothing to search - select at least one term or filter.");
+      return;
+    }
+    renderResults(perDB);
+    resetBtn.style.display="block";
+    requestAnimationFrame(()=>resetBtn.style.opacity="1");
+  }
+
+  function renderResults(perDB){
+    resultsSection.innerHTML="";
+    resultsSection.hidden=false;
+    for(const [db, q] of Object.entries(perDB)){
+      const block=document.createElement("div");
+      block.className="result-block";
+      block.innerHTML=`
+        <label>${db}</label>
+        <textarea readonly rows="10">${q}</textarea>
+        <div class="result-actions">
+          <button class="copy-btn">Copy</button>
+          <button class="open-btn">Open in ${db}</button>
+        </div>
+      `;
+      const ta=block.querySelector("textarea");
+      block.querySelector(".copy-btn").addEventListener("click",()=>{
+        navigator.clipboard.writeText(ta.value);
+      });
+      block.querySelector(".open-btn").addEventListener("click",()=>{
+        const urlBase={
+          PubMed:   "https://pubmed.ncbi.nlm.nih.gov/",
+          Cochrane: "https://www.cochranelibrary.com/advanced-search/search-manager",
+          Embase:   "https://www.embase.com/",
+          Scopus:   "https://www.scopus.com/"
+        }[db];
+        navigator.clipboard.writeText(ta.value);
+        window.open(urlBase,"_blank");
+      });
+      resultsSection.appendChild(block);
+    }
+  }
+
+  function getFilters(){
+    return {
+      Scopus: [
+        { title: "Scopus Observational Studies",
+          query: `TITLE-ABS-KEY(observational W/3 (study OR studies OR design OR analysis OR analyses )) OR TITLE-ABS-KEY(cohort*) OR TITLE-ABS-KEY(prospective W/7 (study OR studies OR design OR analysis OR analyses )) OR TITLE-ABS-KEY(("follow up" OR followup ) W/7 (study OR studies OR design OR analysis OR analyses )) OR TITLE-ABS-KEY((longitudinal OR longterm OR (long W/1 term )) W/7 (study OR studies OR design OR analysis OR analyses OR data )) OR TITLE-ABS-KEY(retrospective W/7 (study OR studies OR design OR analysis OR analyses OR data OR review )) OR TITLE-ABS-KEY((case W/1 control ) OR (case W/1 comparison ) OR (case W/1 controlled )) OR TITLE-ABS-KEY(case-referent W/3 (study OR studies OR design OR analysis OR analyses )) OR TITLE-ABS-KEY(population W/3 (study OR studies OR analysis OR analyses )) OR TITLE-ABS-KEY(descriptive W/3 (study OR studies OR design OR analysis OR analyses )) OR TITLE-ABS-KEY((multidimensional OR (multi W/1 dimensional )) W/3 (study OR studies OR design OR analysis OR analyses )) OR TITLE-ABS-KEY(cross W/1 sectional W/7 (study OR studies OR design OR research OR analysis OR analyses OR survey OR findings )) OR TITLE-ABS-KEY((natural W/1 experiment ) OR (natural W/1 experiments )) OR TITLE-ABS-KEY(quasi W/1 (experiment OR experiments OR experimental )) OR TITLE-ABS-KEY(("non experiment" OR nonexperiment OR "non experimental" OR nonexperimental ) W/3 (study OR studies OR design OR analysis OR analyses )) OR TITLE-ABS-KEY(prevalence W/3 (study OR studies OR analysis OR analyses )) OR TITLE-ABS-KEY("case series") OR TITLE-ABS-KEY(case W/3 (report OR reports OR study OR studies OR histories ))`,
+          ref: "https://searchfilters.cda-amc.ca/link/107" },
+        { title: "SR / MA / HTA / ITC – Scopus",
+          query: `(TITLE-ABS-KEY((systematic* W/3 (review* OR overview* )) OR (methodologic* W/3 (review* OR overview* ))) OR TITLE-ABS-KEY((quantitative W/3 (review* OR overview* OR synthes* )) OR (research W/3 (integrati* OR overview* ))) OR TITLE-ABS-KEY((integrative W/3 (review* OR overview* )) OR (collaborative W/3 (review* OR overview* )) OR (pool* W/3 analy* )) OR TITLE-ABS-KEY("data synthes*" OR "data extraction*" OR "data abstraction*" ) OR TITLE-ABS-KEY(handsearch* OR "hand search*" ) OR TITLE-ABS-KEY("mantel haenszel" OR peto OR "der simonian" OR dersimonian OR "fixed effect*" OR "latin square*" ) OR TITLE-ABS-KEY("met analy*" OR metanaly* OR "technology assessment*" OR HTA OR HTAs OR "technology overview*" OR "technology appraisal*" ) OR TITLE-ABS-KEY("meta regression*" OR metaregression* ) OR TITLE-ABS-KEY(meta-analy* OR metaanaly* OR "biomedical technology assessment*" OR "bio-medical technology assessment*" ) OR TITLE-ABS-KEY(medline OR cochrane OR pubmed OR medlars OR embase OR cinahl ) OR SRCTITLE(cochrane OR (health W/2 "technology assessment" ) OR "evidence report" ) OR TITLE-ABS-KEY(comparative W/3 (efficacy OR effectiveness )) OR TITLE-ABS-KEY("outcomes research" OR "relative effectiveness" ) OR TITLE-ABS-KEY((indirect OR "indirect treatment" OR mixed-treatment OR bayesian ) W/3 comparison* ) OR TITLE-ABS-KEY(multi* W/3 treatment W/3 comparison* ) OR TITLE-ABS-KEY(mixed W/3 treatment W/3 (meta-analy* OR metaanaly* )) OR TITLE-ABS-KEY("umbrella review*") OR TITLE-ABS-KEY(multi* W/2 paramet* W/2 evidence W/2 synthesis ) OR TITLE-ABS-KEY(multiparamet* W/2 evidence W/2 synthesis ) OR TITLE-ABS-KEY(multi-paramet* W/2 evidence W/2 synthesis ))`,
+          ref: "https://searchfilters.cda-amc.ca/link/105" },
+      ],
+      PubMed: [
+        { title: "PubMed RCT filter", 
+          query: `(randomizedcontrolledtrial[Filter])`,
+          ref: "https://www.nlm.nih.gov/oet/ed/pubmed/mesh/mod02/03-200.html" },
+        { title: "PubMed Review filter",
+          query: `(review[Filter])`,
+          ref: "https://www.nlm.nih.gov/oet/ed/pubmed/mesh/mod02/03-200.html" },
+        { title: "PubMed Case Reports",
+          query: `(casereports[Filter])`,
+          ref: "https://www.nlm.nih.gov/oet/ed/pubmed/mesh/mod02/03-200.html" },
+        { title: "PubMed Comparative Study",
+          query: `(comparativestudy[Filter])`,
+          ref: "https://www.nlm.nih.gov/oet/ed/pubmed/mesh/mod02/03-200.html" },
+        { title: "PubMed Observational Study",
+          query: `(observationalstudy[Filter])`,
+          ref: "https://www.nlm.nih.gov/oet/ed/pubmed/mesh/mod02/03-200.html" },
+        { title: "PubMed MA filter",
+          query: `(meta-analysis[Filter])`, 
+          ref: "https://www.nlm.nih.gov/oet/ed/pubmed/mesh/mod02/03-200.html" },
+        { title: "PubMed SR filter",
+          query: `(systematicreview[Filter])`,
+          ref: "https://www.nlm.nih.gov/oet/ed/pubmed/mesh/mod02/03-200.html" },
+        { title: "Cochrane HSSS (sensitivity‑maximising)",
+          query: `("randomized controlled trial"[Publication Type] OR "controlled clinical trial"[Publication Type] OR "randomized"[Title/Abstract] OR "placebo"[Title/Abstract] OR "drug therapy"[MeSH Subheading] OR "randomly"[Title/Abstract] OR "trial"[Title/Abstract] OR "groups"[Title/Abstract]) NOT ("animals"[MeSH Terms] NOT "humans"[MeSH Terms])`,
+          ref: "https://handbook-5-1.cochrane.org/chapter_6/box_6_4_a_cochrane_hsss_2008_sensmax_pubmed.htm" },
+        { title: "Cochrane HSSS (sensitivity + precision)",
+          query: `("randomized controlled trial"[Publication Type] OR "controlled clinical trial"[Publication Type] OR "randomized"[Title/Abstract] OR "placebo"[Title/Abstract] OR "clinical trials as topic"[MeSH Terms:noexp] OR "randomly"[Title/Abstract] OR "trial"[Title]) NOT ("animals"[MeSH Terms] NOT "humans"[MeSH Terms])`,
+          ref: "https://handbook-5-1.cochrane.org/chapter_6/box_6_4_b_cochrane_hsss_2008_sensprec_pubmed.htm" },
+        { title: "SR / MA / HTA / ITC – PubMed",
+          query: `("systematic"[filter] OR "meta-analysis"[pt] OR "meta-analysis as topic"[mh] OR "meta analy*"[tw] OR metanaly*[tw] OR metaanaly*[tw] OR "met analy*"[tw] OR "integrative research"[tiab] OR "integrative review*"[tiab] OR "integrative overview*"[tiab] OR "research integration*"[tiab] OR "research overview*"[tiab] OR "collaborative review*"[tiab] OR "collaborative overview*"[tiab] OR "systematic review"[pt] OR "systematic reviews as topic"[mh] OR "systematic review*"[tiab] OR "technology assessment*"[tiab] OR "technology overview*"[tiab] OR "technology appraisal*"[tiab] OR "Technology Assessment, Biomedical"[mh] OR HTA[tiab] OR HTAs[tiab] OR "comparative efficacy"[tiab] OR "comparative effectiveness"[tiab] OR "outcomes research"[tiab] OR "indirect comparison*"[tiab] OR "Bayesian comparison"[tiab] OR (("indirect treatment"[tiab] OR "mixed-treatment"[tiab]) AND comparison*[tiab]) OR Embase*[tiab] OR Cinahl*[tiab] OR "systematic overview*"[tiab] OR "methodological overview*"[tiab] OR "methodologic overview*"[tiab] OR "methodological review*"[tiab] OR "methodologic review*"[tiab] OR "quantitative review*"[tiab] OR "quantitative overview*"[tiab] OR "quantitative synthes*"[tiab] OR "pooled analy*"[tiab] OR Cochrane[tiab] OR Medline[tiab] OR Pubmed[tiab] OR Medlars[tiab] OR handsearch*[tiab] OR "hand search*"[tiab] OR "meta-regression*"[tiab] OR metaregression*[tiab] OR "data synthes*"[tiab] OR "data extraction"[tiab] OR "data abstraction*"[tiab] OR "mantel haenszel"[tiab] OR peto[tiab] OR "der-simonian"[tiab] OR dersimonian[tiab] OR "fixed effect*"[tiab] OR "multiple treatment comparison"[tiab] OR "mixed treatment meta-analys*"[tiab] OR "umbrella review*"[tiab] OR (("multiple paramet*"[tiab]) AND ("evidence synthesis"[tiab])) OR (("multi-paramet*"[tiab]) AND ("evidence synthesis"[tiab])) OR ((multiparameter*[tiab]) AND ("evidence synthesis"[tiab])) OR "Cochrane Database Syst Rev"[Journal] OR "health technology assessment winchester, england"[Journal] OR "Evid Rep Technol Assess (Full Rep)"[Journal] OR "Evid Rep Technol Assess (Summ)"[Journal] OR "Int J Technol Assess Health Care"[Journal] OR "GMS Health Technol Assess"[Journal] OR "Health Technol Assess (Rockv)"[Journal] OR "Health Technol Assess Rep"[Journal])`,
+          ref: "https://searchfilters.cda-amc.ca/link/99"  },
+        { title: "RCT / CCT – PubMed",
+          query: `("Randomized Controlled Trial"[pt] OR "Controlled Clinical Trial"[pt] OR "Pragmatic Clinical Trial"[pt] OR "Equivalence Trial"[pt] OR "Clinical Trial, Phase III"[pt] OR "Randomized Controlled Trials as Topic"[mh] OR "Controlled Clinical Trials as Topic"[mh] OR "Random Allocation"[mh] OR "Double-Blind Method"[mh] OR "Single-Blind Method"[mh] OR Placebos[Mesh:NoExp] OR "Control Groups"[mh] OR (random*[tiab] OR sham[tiab] OR placebo*[tiab]) OR ((singl*[tiab] OR doubl*[tiab]) AND (blind*[tiab] OR dumm*[tiab] OR mask*[tiab])) OR ((tripl*[tiab] OR trebl*[tiab]) AND (blind*[tiab] OR dumm*[tiab] OR mask*[tiab])) OR (control*[tiab] AND (study[tiab] OR studies[tiab] OR trial*[tiab] OR group*[tiab])) OR (Nonrandom*[tiab] OR "non random*"[tiab] OR "non-random*"[tiab] OR "quasi-random*"[tiab] OR quasirandom*[tiab]) OR allocated[tiab] OR (("open label"[tiab] OR "open-label"[tiab]) AND (study[tiab] OR studies[tiab] OR trial*[tiab])) OR ((equivalence[tiab] OR superiority[tiab] OR "non-inferiority"[tiab] OR noninferiority[tiab]) AND (study[tiab] OR studies[tiab] OR trial*[tiab])) OR ("pragmatic study"[tiab] OR "pragmatic studies"[tiab]) OR ((pragmatic[tiab] OR practical[tiab]) AND trial*[tiab]) OR ((quasiexperimental[tiab] OR "quasi-experimental"[tiab]) AND (study[tiab] OR studies[tiab] OR trial*[tiab])) OR (phase[ti] AND (III[ti] OR 3[ti]) AND (study[ti] OR studies[ti] OR trial*[ti])) OR (phase[ot] AND (III[ot] OR 3[ot]) AND (study[ot] OR studies[ot] OR trial*[ot])))`,
+          ref: "https://searchfilters.cda-amc.ca/link/108" },
+      ],
+      Embase: [
+        { title: "Embase RCT filter",
+          query: `([randomized controlled trial]/lim)`,
+          ref: "" },
+        { title: "Embase MA filter",
+          query: `([meta analysis]/lim)`,
+          ref: "" },
+        { title: "Embase Controlled Clinical Trial",
+          query: `([controlled clinical trial]/lim)`,
+          ref: "" },
+        { title: "Embase Systematic Review",
+          query: `([systematic review]/lim)`,
+          ref: "" },
+        { title: "Embase Cochrane Review",
+          query: `([cochrane review]/lim)`,
+          ref: "" },
+        { title: "Embase Clinical Trial",
+          query: `(‘clinical trial’/it)`,
+          ref: "" },
+        { title: "Embase Cochrane HSS (sensitivity‑maximising)",
+          query: `(‘randomized controlled trial’/exp OR ‘controlled clinical trial’/de OR random*:ti,ab,tt OR ‘randomization’/de OR ‘intermethod comparison’/de OR placebo:ti,ab,tt OR (compare:ti,tt OR compared:ti,tt OR comparison:ti,tt) OR ((evaluated:ab OR evaluate:ab OR evaluating:ab OR assessed:ab OR assess:ab) AND (compare:ab OR compared:ab OR comparing:ab OR comparison:ab)) OR (open NEXT/1 label):ti,ab,tt OR ((double OR single OR doubly OR singly) NEXT/1 (blind OR blinded OR blindly)):ti,ab,tt OR ‘double blind procedure’/de OR (parallel NEXT/1 group*):ti,ab,tt OR (crossover:ti,ab,tt OR ‘cross over’:ti,ab,tt) OR ((assign* OR match OR matched OR allocation) NEAR/6 (alternate OR group OR groups OR intervention OR interventions OR patient OR patients OR subject OR subjects OR participant OR participants)):ti,ab,tt OR (assigned:ti,ab,tt OR allocated:ti,ab,tt) OR (controlled NEAR/8 (study OR design OR trial)):ti,ab,tt OR (volunteer:ti,ab,tt OR volunteers:ti,ab,tt) OR ‘human experiment’/de OR trial:ti,tt) NOT (((random* NEXT/1 sampl* NEAR/8 (‘cross section*’ OR questionnaire* OR survey OR surveys OR database OR databases)):ti,ab,tt NOT (‘comparative study’/de OR ‘controlled study’/de OR ‘randomised controlled’:ti,ab,tt OR ‘randomized controlled’:ti,ab,tt OR ‘randomly assigned’:ti,ab,tt)) OR (‘cross-sectional study’/de NOT (‘randomized controlled trial’/exp OR ‘controlled clinical study’/de OR ‘controlled study’/de OR ‘randomised controlled’:ti,ab,tt OR ‘randomized controlled’:ti,ab,tt OR ‘control group’:ti,ab,tt OR ‘control groups’:ti,ab,tt)) OR (‘case control*’:ti,ab,tt AND random*:ti,ab,tt NOT (‘randomised controlled’:ti,ab,tt OR ‘randomized controlled’:ti,ab,tt)) OR (‘systematic review’:ti,tt NOT (trial:ti,tt OR study:ti,tt)) OR (nonrandom*:ti,ab,tt NOT random*:ti,ab,tt) OR ‘random field*’:ti,ab,tt OR (‘random cluster’ NEAR/4 sampl*):ti,ab,tt OR ((review:ab AND review:it) NOT trial:ti,tt) OR (‘we searched’:ab AND (review:ti,tt OR review:it)) OR ‘update review’:ab OR (databases NEAR/5 searched):ab OR ((rat:ti,tt OR rats:ti,tt OR mouse:ti,tt OR mice:ti,tt OR swine:ti,tt OR porcine:ti,tt OR murine:ti,tt OR sheep:ti,tt OR lambs:ti,tt OR pigs:ti,ab,tt OR piglets:ti,ab,tt OR rabbit:ti,tt OR rabbits:ti,tt OR cat:ti,tt OR cats:ti,tt OR dog:ti,tt OR dogs:ti,tt OR cattle:ti,tt OR bovine:ti,tt OR monkey:ti,tt OR monkeys:ti,tt OR trout:ti,tt OR marmoset*:ti,tt) AND ‘animal experiment’/de) OR (‘animal experiment’/de NOT (‘human experiment’/de OR ‘human’/de))))`,
+          ref: "https://handbook-5-1.cochrane.org/chapter_6/box_6_4_a_cochrane_hsss_2008_sensmax_pubmed.htm" },
+      ],
+      Cochrane: [
+        { title: "Observational Studies",
+          query: `(epidemiologic:ti,ab,kw OR "case control":ti,ab,kw OR "case referent":ti,ab,kw OR (case NEXT stud*):ti,ab,kw OR "case series":ti,ab,kw OR cohort*:ti,ab,kw OR "cross sectional":ti,ab,kw OR "follow up":ti,ab,kw OR longitudinal:ti,ab,kw OR retrospective*:ti,ab,kw OR prospective*:ti,ab,kw OR observational:ti,ab,kw OR (adverse NEXT effect*):ti,ab,kw OR "Controlled before and after":ti,ab,kw OR "Interrupted time series":ti,ab,kw OR Correlational:ti,ab,kw OR (ecological NEXT stud*):ti,ab,kw OR (Descriptive NEXT stud*):ti,ab,kw) AND (medline:ti OR embase:ti OR pubmed:ti OR (database* AND searching):ti OR ((identify* OR develop* OR design* OR test* OR assess* OR evaluat* OR robust* OR optim* OR effic* OR effect* OR sensitiv* OR simpl* OR specific* OR precis*) NEAR/3 ((search NEXT strat*) OR (search NEXT filter*)):ti,ab,kw))`,
+          ref: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8103566/" },
+      ],
+    };
+  }
+
+  </script>
 </body>
 </html>
