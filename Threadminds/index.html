@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESQUiRE by ThreadMinds | AI-Powered Systematic Reviews</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
+
+    <style>
+        /* Custom Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F0F4FF; /* A light blue-purple background */
+        }
+
+        /* Hero section gradient background from the image */
+        .hero-gradient {
+            background-color: #D6D6F2; /* A base purple from the image */
+            background-image: radial-gradient(circle at 50% 50%, #FDECB9, #D6D6F2 70%);
+        }
+
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Section header styling */
+        .section-header {
+            font-weight: 800;
+            color: #1a2753; /* Dark blue from image */
+        }
+        
+        /* Card styling with hover effect */
+        .feature-card, .team-card, .milestone-card, .competitor-card, .plan-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .feature-card:hover, .team-card:hover, .milestone-card:hover, .competitor-card:hover, .plan-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="text-slate-700 antialiased">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-slate-800">
+                ESQU<span class="text-indigo-600">i</span>RE
+            </div>
+            <div class="hidden md:flex items-center space-x-8 font-semibold">
+                <a href="#problem" class="hover:text-indigo-600 transition-colors">The Problem</a>
+                <a href="#solution" class="hover:text-indigo-600 transition-colors">Solution</a>
+                <a href="#features" class="hover:text-indigo-600 transition-colors">Advantage</a>
+                <a href="#milestones" class="hover:text-indigo-600 transition-colors">Milestones</a>
+                <a href="#team" class="hover:text-indigo-600 transition-colors">Team</a>
+                <a href="#contact" class="bg-indigo-600 text-white px-5 py-2 rounded-full hover:bg-indigo-700 transition-shadow shadow-lg hover:shadow-xl">Request Demo</a>
+            </div>
+             <div class="md:hidden">
+                <button id="menu-btn" class="text-slate-800 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white/95">
+            <a href="#problem" class="block py-2 px-4 text-sm hover:bg-gray-200">The Problem</a>
+            <a href="#solution" class="block py-2 px-4 text-sm hover:bg-gray-200">Solution</a>
+            <a href="#features" class="block py-2 px-4 text-sm hover:bg-gray-200">Advantage</a>
+            <a href="#milestones" class="block py-2 px-4 text-sm hover:bg-gray-200">Milestones</a>
+            <a href="#team" class="block py-2 px-4 text-sm hover:bg-gray-200">Team</a>
+            <a href="#contact" class="block py-3 px-4 text-sm bg-indigo-500 text-white text-center font-bold">Request Demo</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero-gradient">
+            <div class="container mx-auto px-6 text-center py-24 md:py-32 lg:py-40">
+                <h1 class="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight" style="color: #1a2753;">ESQU<span class="text-indigo-600">i</span>RE</h1>
+                <p class="mt-4 text-lg md:text-xl font-medium" style="color: #2c3e50;">by ThreadMinds Pvt. Ltd.</p>
+                <p class="mt-6 max-w-3xl mx-auto text-xl md:text-2xl text-slate-800/80">
+                    Revolutionizing systematic reviews with an end-to-end, AI-powered platform. Go from query to insight, faster and more reliably than ever before.
+                </p>
+                <div class="mt-10 flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                    <a href="#contact" class="bg-white text-slate-800 font-bold px-8 py-4 rounded-full shadow-2xl hover:bg-gray-100 transition-all text-lg transform hover:scale-105 w-full sm:w-auto">
+                        Let's Search
+                    </a>
+                    <a href="https://drive.google.com/drive/folders/1Poh-BKYTvho2EgZIDT_qWCasr1JtLiZh?usp=sharing" target="_blank" class="bg-transparent border-2 border-slate-700 text-slate-800 font-bold px-8 py-4 rounded-full shadow-xl hover:bg-white/30 transition-all text-lg transform hover:scale-105 w-full sm:w-auto">
+                        Watch Demo
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Problem Section -->
+        <section id="problem" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl md:text-5xl section-header">Scaling a Mountain By Hand</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">The current process for systematic reviews is a manual, fragmented, and exhausting grind that slows discovery and risks missing critical evidence.</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-xl text-slate-800">Fragmented Search</h3>
+                        <p class="mt-2 text-slate-600">Wrestling with disparate databases, bespoke search syntaxes, and hunting down obscure synonyms across multiple platforms.</p>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-xl text-slate-800">Manual Drudgery</h3>
+                        <p class="mt-2 text-slate-600">Poring over thousands of abstracts, painstakingly weeding out duplicates, and manually extracting data from text, tables, and figures.</p>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-xl text-slate-800">Error-Prone & Subjective</h3>
+                        <p class="mt-2 text-slate-600">Facing subjective, error-prone bias assessments with no reliable automation and double-checking every number by hand.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Solution Section -->
+        <section id="solution" class="py-20 bg-slate-100">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl md:text-5xl section-header">The Unified, Semi-Automated Workflow</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">ESQUiRE unifies search, screening, extraction, validation, and bias assessment into a single, seamless engine so you can focus on insight, not busywork.</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="feature-card bg-white p-6 rounded-xl shadow-lg text-center">
+                        <div class="bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 10l-4 4m4-4l4 4"/></svg>
+                        </div>
+                        <h3 class="font-bold text-xl mt-4 text-slate-800">PICO-Driven Search</h3>
+                        <p class="mt-2 text-slate-600">Translate one query into optimized searches across 5 major databases automatically.</p>
+                    </div>
+                    <div class="feature-card bg-white p-6 rounded-xl shadow-lg text-center">
+                         <div class="bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                        </div>
+                        <h3 class="font-bold text-xl mt-4 text-slate-800">AI-Powered Screening</h3>
+                        <p class="mt-2 text-slate-600">Accelerate abstract review with smart suggestions and PICO-based keyword filters.</p>
+                    </div>
+                    <div class="feature-card bg-white p-6 rounded-xl shadow-lg text-center">
+                         <div class="bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        </div>
+                        <h3 class="font-bold text-xl mt-4 text-slate-800">Validated Extraction</h3>
+                        <p class="mt-2 text-slate-600">Hybrid extractor pulls data into structured sets, with mandatory validation for accuracy.</p>
+                    </div>
+                    <div class="feature-card bg-white p-6 rounded-xl shadow-lg text-center">
+                         <div class="bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <h3 class="font-bold text-xl mt-4 text-slate-800">ML-Augmented RoB</h3>
+                        <p class="mt-2 text-slate-600">Generate risk-of-bias assessments for diverse study designs, trained on expert-annotated corpora.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Advantage / How it works Section -->
+        <section id="features" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                     <h2 class="text-4xl md:text-5xl section-header">The ESQUiRE Advantage</h2>
+                     <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">We don't just solve a piece of the puzzle. We are the only solution that weaves every step together.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-16 items-center">
+                    <div>
+                        <h3 class="text-3xl font-bold text-slate-800">A True End-to-End Platform</h3>
+                        <p class="mt-4 text-lg text-slate-600">While competitors offer piecemeal solutions—a syntax converter here, a deduplicator there—ESQUiRE provides a single, cohesive workflow. From intelligent query translation to ML-backed analysis, we connect the dots so you don't have to.</p>
+                        <ul class="mt-6 space-y-4">
+                            <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span><strong>Real-time Federated Search:</strong> Execute searches across 5 major databases and see deduplicated counts upfront.</span>
+                            </li>
+                             <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span><strong>Enforced Checkbox Validation:</strong> Guarantee data accuracy with a mandatory validation step for every extracted field.</span>
+                            </li>
+                             <li class="flex items-start">
+                                <svg class="w-6 h-6 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span><strong>Rigorously Benchmarked:</strong> Our performance is transparently validated against expert workflows and gold-standard reference sets.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="competitor-card p-6 bg-rose-50 border border-rose-200 rounded-xl">
+                            <h4 class="font-bold text-rose-800">Syntax Converters</h4>
+                            <p class="text-sm text-rose-600 mt-1">Struggle with nuanced thesauri and don't execute searches.</p>
+                        </div>
+                         <div class="competitor-card p-6 bg-amber-50 border border-amber-200 rounded-xl">
+                            <h4 class="font-bold text-amber-800">Reference Managers</h4>
+                            <p class="text-sm text-amber-600 mt-1">Only deduplicate *after* you manually gather results.</p>
+                        </div>
+                         <div class="competitor-card p-6 bg-sky-50 border border-sky-200 rounded-xl">
+                            <h4 class="font-bold text-sky-800">Full-Service Platforms</h4>
+                            <p class="text-sm text-sky-600 mt-1">Still leave you importing, screening, and extracting by hand.</p>
+                        </div>
+                        <div class="p-6 bg-indigo-600 text-white rounded-xl shadow-lg">
+                             <h4 class="font-bold">ESQUiRE</h4>
+                            <p class="text-sm mt-1 opacity-90">Integrates all steps into one seamless, validated workflow.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Milestones Section -->
+        <section id="milestones" class="py-20 bg-slate-100">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl md:text-5xl section-header">Our Journey So Far</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">From a bootstrapped prototype to a scientifically validated platform, our progress is built on a solid foundation.</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="milestone-card bg-white p-6 rounded-xl shadow-md">
+                        <h3 class="font-bold text-xl text-indigo-600">Lab-Scale Prototype</h3>
+                        <p class="mt-2 text-slate-600">Successfully bootstrapped and built a working prototype, proving the core concept.</p>
+                    </div>
+                    <div class="milestone-card bg-white p-6 rounded-xl shadow-md">
+                        <h3 class="font-bold text-xl text-indigo-600">Workflow Validation</h3>
+                        <p class="mt-2 text-slate-600">Validated all core modules against real-world systematic review workflows.</p>
+                    </div>
+                    <div class="milestone-card bg-white p-6 rounded-xl shadow-md">
+                        <h3 class="font-bold text-xl text-indigo-600">Exceeded Benchmarks</h3>
+                        <p class="mt-2 text-slate-600">Early prototypes match or exceed manual workflows in both speed and fidelity.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Business Model -->
+        <section class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl md:text-5xl section-header">Flexible Pricing for Every Team</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Our SaaS model is designed to support everyone from individual academics to large enterprise teams.</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                    <div class="plan-card border-2 border-slate-200 p-8 rounded-2xl text-center">
+                        <h3 class="text-2xl font-bold">Academic</h3>
+                        <p class="text-slate-500 mt-2">For students & educators</p>
+                        <p class="text-4xl font-extrabold text-slate-800 my-6">Free</p>
+                        <p class="text-slate-600">Get started with our core features to accelerate your research.</p>
+                    </div>
+                    <div class="plan-card border-2 border-indigo-600 p-8 rounded-2xl text-center shadow-2xl relative">
+                        <span class="bg-indigo-600 text-white text-xs font-bold uppercase px-3 py-1 rounded-full absolute top-0 -translate-y-1/2">Most Popular</span>
+                        <h3 class="text-2xl font-bold">Professional</h3>
+                        <p class="text-slate-500 mt-2">For individual researchers</p>
+                        <p class="text-4xl font-extrabold text-slate-800 my-6">$15<span class="text-lg font-medium text-slate-500">/mo</span></p>
+                        <p class="text-slate-600">Unlock advanced features and premium support for your projects.</p>
+                    </div>
+                    <div class="plan-card border-2 border-slate-200 p-8 rounded-2xl text-center">
+                        <h3 class="text-2xl font-bold">Enterprise</h3>
+                        <p class="text-slate-500 mt-2">For institutions & companies</p>
+                        <p class="text-4xl font-extrabold text-slate-800 my-6">Custom</p>
+                        <p class="text-slate-600">Site-wide licenses, team management, and dedicated support.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Financial Projections Section -->
+        <section class="py-20 bg-slate-100">
+             <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl md:text-5xl section-header">A Strong Growth Trajectory</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Projected to capture a significant share of a rapidly growing market through our unique value proposition.</p>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-lg max-w-4xl mx-auto">
+                    <div class="flex flex-col md:flex-row justify-around items-center text-center gap-8">
+                        <div>
+                            <p class="text-5xl font-extrabold text-indigo-600">$338M</p>
+                            <p class="mt-1 font-semibold text-slate-600">Market Size (2025)</p>
+                        </div>
+                         <div>
+                            <p class="text-5xl font-extrabold text-indigo-600">$13.5M</p>
+                            <p class="mt-1 font-semibold text-slate-600">Projected ARR by 2030</p>
+                        </div>
+                        <div>
+                            <p class="text-5xl font-extrabold text-indigo-600">&gt;150%</p>
+                            <p class="mt-1 font-semibold text-slate-600">Early CAGR</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Team Section -->
+        <section id="team" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl md:text-5xl section-header">The Minds Behind the Mission</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Founded by medical doctors turned innovation-driven technologists with deep expertise in clinical workflows, biostatistics, and machine learning.</p>
+                </div>
+                <div class="flex flex-wrap justify-center gap-10">
+                    <!-- Team Member 1 -->
+                    <div class="team-card bg-slate-50 p-8 rounded-2xl shadow-xl text-center w-full max-w-sm border border-slate-200">
+                        <img class="w-28 h-28 rounded-full mx-auto -mt-16 border-4 border-white shadow-lg" src="https://placehold.co/128x128/7E8EFB/FFFFFF?text=VG" alt="Dr. Victor Ghosh" onerror="this.onerror=null;this.src='https://placehold.co/128x128/E2E8F0/475569?text=VG';">
+                        <h3 class="text-2xl font-bold mt-4 text-slate-800">Dr. Victor Ghosh</h3>
+                        <p class="font-semibold text-indigo-600">Co-founder</p>
+                        <p class="mt-2 text-slate-600 text-sm">Innovation Fellow at SiB AIIMS New Delhi, applying the Stanford Biodesign framework to channel clinical insights into robust product features.</p>
+                        <div class="mt-4 flex justify-center space-x-4">
+                            <a href="https://www.linkedin.com/in/victor-ghosh-058b06164/" target="_blank" class="text-slate-400 hover:text-indigo-600">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                            </a>
+                            <a href="https://scholar.google.com/citations?user=n6SPwNkAAAAJ&hl=en" target="_blank" class="text-slate-400 hover:text-indigo-600">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5.242 13.769L0 9.5L12 0l12 9.5l-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14a7 7 0 0 0 0-14z"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Team Member 2 -->
+                    <div class="team-card bg-slate-50 p-8 rounded-2xl shadow-xl text-center w-full max-w-sm border border-slate-200">
+                        <img class="w-28 h-28 rounded-full mx-auto -mt-16 border-4 border-white shadow-lg" src="https://placehold.co/128x128/FDECB9/333333?text=AB" alt="Dr. Aman Bhonsale" onerror="this.onerror=null;this.src='https://placehold.co/128x128/E2E8F0/475569?text=AB';">
+                        <h3 class="text-2xl font-bold mt-4 text-slate-800">Dr. Aman Bhonsale</h3>
+                        <p class="font-semibold text-indigo-600">Co-founder</p>
+                        <p class="mt-2 text-slate-600 text-sm">AIIMS Nagpur alumnus, bringing a blend of rigorous medical training, hands-on research experience, and strong expertise in biostatistics and ML.</p>
+                        <div class="mt-4 flex justify-center space-x-4">
+                           <a href="https://www.linkedin.com/in/dr-aman-bhonsale-249829278/" target="_blank" class="text-slate-400 hover:text-indigo-600">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                            </a>
+                            <a href="https://scholar.google.com/citations?hl=en&user=ymH_K1IAAAAJ" target="_blank" class="text-slate-400 hover:text-indigo-600">
+                               <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5.242 13.769L0 9.5L12 0l12 9.5l-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14a7 7 0 0 0 0-14z"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="py-20 bg-slate-100">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl md:text-5xl section-header">Ready to Revolutionize Your Research?</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Request a demo to see ESQUiRE in action or join our beta program to get early access.</p>
+                </div>
+                <div class="max-w-xl mx-auto bg-white p-8 sm:p-12 rounded-2xl shadow-2xl">
+                    <form>
+                        <div class="space-y-6">
+                            <div>
+                                <label for="name" class="font-semibold text-slate-800">Full Name</label>
+                                <input type="text" id="name" class="mt-2 w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Dr. Jane Doe">
+                            </div>
+                             <div>
+                                <label for="email" class="font-semibold text-slate-800">Email Address</label>
+                                <input type="email" id="email" class="mt-2 w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="jane.doe@research.edu">
+                            </div>
+                            <div>
+                                <label for="institution" class="font-semibold text-slate-800">Institution / Company</label>
+                                <input type="text" id="institution" class="mt-2 w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="University of Science">
+                            </div>
+                            <div>
+                                <label for="message" class="font-semibold text-slate-800">Message</label>
+                                <textarea id="message" rows="4" class="mt-2 w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="I'm interested in the enterprise plan..."></textarea>
+                            </div>
+                            <div>
+                                <button type="submit" class="w-full bg-indigo-600 text-white font-bold text-lg py-4 rounded-lg hover:bg-indigo-700 transition-colors shadow-lg">Request a Demo</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-300">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2025 ThreadMinds Pvt. Ltd. All Rights Reserved.</p>
+            <p class="text-sm text-slate-400 mt-2">ESQUiRE - Electronic Search QUery Retrieval system</p>
+             <div class="mt-4">
+                <a href="https://threadminds.org" target="_blank" class="hover:text-white transition-colors">threadminds.org</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript for mobile menu toggle
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when a link is clicked
+        const mobileMenuLinks = mobileMenu.getElementsByTagName('a');
+        for (let link of mobileMenuLinks) {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        }
+    </script>
+
+</body>
+</html>
