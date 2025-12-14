@@ -192,7 +192,6 @@
         }
 
         function getZScore(confidenceLevel, sides) {
-            // confidenceLevel is percentage e.g., 95
             const alpha = 1 - (confidenceLevel / 100);
             const p = sides === 'two' ? 1 - (alpha / 2) : 1 - alpha;
             return inverseNormalCDF(p);
@@ -201,16 +200,17 @@
         function App() {
             const [mode, setMode] = useState('se_to_ci'); // 'se_to_ci' or 'ci_to_se'
             const [sides, setSides] = useState('two'); // 'one' or 'two'
+            const [tail, setTail] = useState('right'); // 'right' (Upper Bound) or 'left' (Lower Bound) for one-sided
             
             // Inputs
             const [meanInput, setMeanInput] = useState('');
             const [seInput, setSeInput] = useState('');
             const [lowerInput, setLowerInput] = useState('');
             const [upperInput, setUpperInput] = useState('');
-            const [confInput, setConfInput] = useState(''); // Confidence level list
+            const [confInput, setConfInput] = useState(''); 
 
             const [results, setResults] = useState([]);
-            const [showModal, setShowModal] = useState(false);
+            const [modalContent, setModalContent] = useState(null); 
             const [inputType, setInputType] = useState('manual');
             const fileInputRef = useRef(null);
 
@@ -226,58 +226,92 @@
             };
 
             const calculateRow = (idx, meanStr, val2Str, val3Str, confStr) => {
-                // val2 is SE (if mode 1) or Lower (if mode 2)
-                // val3 is unused (if mode 1) or Upper (if mode 2)
+                // For CI->SE: val2Str is Lower, val3Str is Upper.
+                // For SE->CI: meanStr is Mean, val2Str is SE.
                 
-                const mean = Number(meanStr);
                 const conf = Number(confStr);
-                
-                if (isNaN(mean) || isNaN(conf)) return { id: idx, error: "Invalid Number" };
-                if (conf <= 0 || conf >= 100) return { id: idx, error: "Conf% must be 0-100" };
-
+                if (isNaN(conf) || conf <= 0 || conf >= 100) return { id: idx, error: "Invalid Conf%" };
                 const z = getZScore(conf, sides);
 
                 if (mode === 'se_to_ci') {
+                    const mean = Number(meanStr);
                     const se = Number(val2Str);
-                    if (isNaN(se) || se < 0) return { id: idx, error: "Invalid SE" };
+                    if (isNaN(mean) || isNaN(se) || se < 0) return { id: idx, error: "Invalid Mean/SE" };
                     
                     const margin = z * se;
-                    return {
-                        id: idx,
-                        input: `Mean=${mean}, SE=${se}, ${conf}%`,
-                        output1: (mean - margin).toFixed(4), // Lower
-                        output2: (mean + margin).toFixed(4), // Upper
-                        type: 'CI'
-                    };
+
+                    if (sides === 'two') {
+                        return {
+                            id: idx,
+                            input: `Mean=${mean}, SE=${se}, ${conf}% (2-sided)`,
+                            output1: (mean - margin).toFixed(4), // Lower
+                            output2: (mean + margin).toFixed(4), // Upper
+                            type: 'CI'
+                        };
+                    } else {
+                        if (tail === 'right') {
+                            // Right Tailed (Upper Bound) -> CI = (-Infinity, Estimate + z*SE]
+                            return {
+                                id: idx,
+                                input: `Mean=${mean}, SE=${se}, ${conf}% (1-sided Right)`,
+                                output1: (mean + margin).toFixed(4), 
+                                type: 'Upper Bound'
+                            };
+                        } else {
+                            // Left Tailed (Lower Bound) -> CI = [Estimate - z*SE, Infinity)
+                            return {
+                                id: idx,
+                                input: `Mean=${mean}, SE=${se}, ${conf}% (1-sided Left)`,
+                                output1: (mean - margin).toFixed(4),
+                                type: 'Lower Bound'
+                            };
+                        }
+                    }
+
                 } else {
-                    const lower = Number(val2Str);
-                    const upper = Number(val3Str);
-                    if (isNaN(lower) || isNaN(upper)) return { id: idx, error: "Invalid Limits" };
-                    if (lower > upper) return { id: idx, error: "Lower > Upper" };
+                    // CI -> SE conversion
+                    if (sides === 'two') {
+                        const lower = Number(val2Str);
+                        const upper = Number(val3Str);
+                        if (isNaN(lower) || isNaN(upper)) return { id: idx, error: "Invalid Limits" };
+                        if (lower > upper) return { id: idx, error: "Lower > Upper" };
+                        
+                        const se = (upper - lower) / (2 * z);
+                        return {
+                            id: idx,
+                            input: `[${lower}, ${upper}], ${conf}%`,
+                            output1: se.toFixed(4),
+                            type: 'SE'
+                        };
+                    } else {
+                         // One sided CI -> SE
+                         // Formula: SE = |Bound - Mean| / z
+                         // We need Mean and Bound.
+                         // Inputs: meanStr (Mean), val2Str (Lower), val3Str (Upper)
+                         const mean = Number(meanStr);
+                         if (isNaN(mean)) return { id: idx, error: "Mean required for 1-sided" };
+                         
+                         let bound;
+                         if (tail === 'right') {
+                             bound = Number(val3Str); // Upper
+                         } else {
+                             bound = Number(val2Str); // Lower
+                         }
 
-                    // Logic: Width based SE calculation
-                    // Two-sided: Width = Upper - Lower = 2 * z * SE  => SE = (U - L) / (2z)
-                    // One-sided: Width = |Upper - Lower| ... wait.
-                    // For one sided, usually we just have one limit. But prompt implies converting "Confidence Interval (upper and lower limits)" to SE.
-                    // If one sided, typically one limit is infinity. 
-                    // However, the prompt formula says: SE = (Upper - Lower) / z_(1-alpha) for one sided.
-                    // We will interpret this as the user providing the bound that isn't infinity and the mean, or just the width if valid.
-                    // Let's stick strictly to prompt formula: SE = (Upper - Lower) / z.
-                    
-                    const divisor = sides === 'two' ? (2 * z) : z;
-                    const se = (upper - lower) / divisor;
-
-                    return {
-                        id: idx,
-                        input: `[${lower}, ${upper}], ${conf}%`,
-                        output1: se.toFixed(4), // SE
-                        type: 'SE'
-                    };
+                         if (isNaN(bound)) return { id: idx, error: "Invalid Bound" };
+                         
+                         const se = Math.abs(bound - mean) / z;
+                         return {
+                            id: idx,
+                             input: `Mean=${mean}, Bound=${bound}, ${conf}% (1-sided)`,
+                             output1: se.toFixed(4),
+                             type: 'SE'
+                         };
+                    }
                 }
             };
 
             const handleCalculate = () => {
-                // Split inputs
                 const means = meanInput.split(',').map(s => s.trim());
                 const confs = confInput.split(',').map(s => s.trim());
                 
@@ -289,7 +323,7 @@
                     for(let i=0; i<maxLen; i++) {
                         const m = means[i] || "";
                         const s = ses[i] || "";
-                        const c = confs[i] || "95"; // Default 95 if missing
+                        const c = confs[i] || "95"; 
                         if(m==="" && s==="") continue;
                         results.push(calculateRow(i, m, s, null, c));
                     }
@@ -301,35 +335,58 @@
                         const l = lowers[i] || "";
                         const u = uppers[i] || "";
                         const c = confs[i] || "95";
-                        // Note: Mean isn't strictly needed for CI -> SE if using the width method in prompt
-                        // But I'll pass mean just in case, though calculateRow uses Val2/Val3 for limits
-                        if(l==="" && u==="") continue;
-                        results.push(calculateRow(i, null, l, u, c)); 
+                        // For one-sided we also need Mean, so we grab it from means array
+                        const m = means[i] || ""; 
+                        
+                        if(mode === 'ci_to_se' && sides === 'one' && m === "") {
+                             // If mean is missing in one-sided CI->SE, we can't calculate.
+                             // But we push to calculateRow to handle error.
+                        }
+                        
+                        if(l==="" && u==="" && m==="") continue;
+                        results.push(calculateRow(i, m, l, u, c)); 
                     }
                 }
                 setResults(results);
             };
 
-            // File upload logic (Simplified for this snippet, assumes manual entry flow or pre-parsing)
-            // Ideally, file upload would parse into these comma-separated strings.
-            const handleFileUpload = (e) => {
-                 const file = e.target.files[0];
-                 if(!file) return;
-                 const reader = new FileReader();
-                 reader.onload = (evt) => {
-                     // Basic dump to text areas for manual correction/verification
-                     alert("File loaded. Please ensure data is in columns format (Mean, SE, etc.) and paste into respective boxes.");
-                 };
-                 reader.readAsText(file);
+            const copyToClipboard = () => {
+                const text = results.map(r => {
+                     if (mode === 'se_to_ci' && sides === 'two') {
+                        return `${r.input}\t${r.output1}\t${r.output2}`;
+                     } else {
+                         return `${r.input}\t${r.output1}`;
+                     }
+                }).join("\n");
+                
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    alert("Copied to clipboard!");
+                } catch (err) {
+                    alert("Failed to copy: " + err);
+                }
+                document.body.removeChild(textarea);
             };
 
             const exportCSV = () => {
-                const header = mode === 'se_to_ci' ? "Input,Lower CI,Upper CI" : "Input,Standard Error";
-                const rows = results.map(r => 
-                    mode === 'se_to_ci' 
-                    ? `"${r.input}",${r.output1},${r.output2}`
-                    : `"${r.input}",${r.output1}`
-                ).join("\n");
+                let header = "Input,Output";
+                if (mode === 'se_to_ci') {
+                     header = sides === 'two' ? "Input,Lower CI,Upper CI" : "Input,Bound";
+                } else {
+                    header = "Input,Standard Error";
+                }
+
+                const rows = results.map(r => {
+                    if (mode === 'se_to_ci' && sides === 'two') {
+                         return `"${r.input}",${r.output1},${r.output2}`;
+                    }
+                    return `"${r.input}",${r.output1}`;
+                }).join("\n");
+
                 const csv = `data:text/csv;charset=utf-8,${header}\n${rows}`;
                 const link = document.createElement("a");
                 link.setAttribute("href", encodeURI(csv));
@@ -339,39 +396,6 @@
                 document.body.removeChild(link);
             };
 
-            const copyToClipboard = () => {
-                const text = results.map(r => {
-                     if (mode === 'se_to_ci') {
-                        return `${r.input}\t${r.output1}\t${r.output2}`;
-                     } else {
-                         return `${r.input}\t${r.output1}`;
-                     }
-                }).join("\n");
-                
-                // Create a temporary textarea element
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                document.body.appendChild(textarea);
-                
-                // Select the text
-                textarea.select();
-                
-                try {
-                    // Use execCommand for broader compatibility including iframes
-                    const successful = document.execCommand('copy');
-                    if(successful) {
-                         alert("Copied to clipboard!");
-                    } else {
-                         alert("Failed to copy. Please try manually.");
-                    }
-                } catch (err) {
-                    alert("Failed to copy: " + err);
-                }
-                
-                // Remove the temporary element
-                document.body.removeChild(textarea);
-            };
-
             return (
                 <div className="min-h-screen flex flex-col">
                      <header className="bg-white border-b border-slate-200 py-4 sticky top-0 z-50">
@@ -379,7 +403,7 @@
                             <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href='index.html'}>
                                 <img src="Entropy.png" alt="Entro.py" className="h-8" />
                             </div>
-                            <a href="all_converters.html" className="text-sm font-medium text-[#184B44] hover:text-[#2a6e64] transition-colors flex items-center gap-1">
+                            <a href="Convert Statistical Quantities.html" className="text-sm font-medium text-[#184B44] hover:text-[#2a6e64] transition-colors flex items-center gap-1">
                                 <ArrowLeft /> Back to Tools
                             </a>
                         </div>
@@ -401,39 +425,57 @@
                                 <ul className="list-disc pl-5 space-y-1 text-sm text-[#92400e]/90">
                                     <li>Independent observations.</li>
                                     <li>Standard deviation refers to the same sample used for the mean.</li>
+                                    <li>Sample is adequately large / at least normally distributed.</li>
                                 </ul>
                             </div>
                         </div>
 
                         <div className="tool-card animate-fade-up" style={{animationDelay: '0.2s'}}>
                             {/* Controls */}
-                            <div className="flex flex-wrap items-center justify-between gap-4 mb-8 border-b border-slate-100 pb-6">
-                                <div className="flex gap-2">
-                                    <button 
-                                        onClick={() => { setMode('se_to_ci'); setResults([]); }}
-                                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${mode === 'se_to_ci' ? 'bg-[#184B44] text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                                    >
-                                        SE → CI
-                                    </button>
-                                    <button 
-                                        onClick={() => { setMode('ci_to_se'); setResults([]); }}
-                                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${mode === 'ci_to_se' ? 'bg-[#184B44] text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                                    >
-                                        CI → SE
-                                    </button>
-                                </div>
-
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-sm font-medium ${sides === 'one' ? 'text-[#184B44]' : 'text-slate-400'}`}>One-Sided</span>
-                                        <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                                            <input type="checkbox" name="toggle" id="toggle" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked={sides === 'two'} onChange={() => setSides(s => s === 'one' ? 'two' : 'one')}/>
-                                            <label htmlFor="toggle" className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"></label>
-                                        </div>
-                                        <span className={`text-sm font-medium ${sides === 'two' ? 'text-[#184B44]' : 'text-slate-400'}`}>Two-Sided</span>
+                            <div className="flex flex-col gap-6 mb-8 border-b border-slate-100 pb-6">
+                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => { setMode('se_to_ci'); setResults([]); }}
+                                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${mode === 'se_to_ci' ? 'bg-[#184B44] text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                        >
+                                            SE → CI
+                                        </button>
+                                        <button 
+                                            onClick={() => { setMode('ci_to_se'); setResults([]); }}
+                                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${mode === 'ci_to_se' ? 'bg-[#184B44] text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                        >
+                                            CI → SE
+                                        </button>
                                     </div>
-                                    <button onClick={() => setShowModal(true)} className="text-[#184B44] hover:bg-[#e6fffa] p-2 rounded-full transition-colors"><Info /></button>
+
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-sm font-medium ${sides === 'one' ? 'text-[#184B44]' : 'text-slate-400'}`}>One-Sided</span>
+                                            <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                                <input type="checkbox" name="toggle" id="toggle" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked={sides === 'two'} onChange={() => setSides(s => s === 'one' ? 'two' : 'one')}/>
+                                                <label htmlFor="toggle" className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"></label>
+                                            </div>
+                                            <span className={`text-sm font-medium ${sides === 'two' ? 'text-[#184B44]' : 'text-slate-400'}`}>Two-Sided</span>
+                                        </div>
+                                        {/* Info Icon for Sidedness - Always Visible */}
+                                        <button onClick={() => setModalContent('two-sided')} className="text-[#184B44] hover:bg-[#e6fffa] p-2 rounded-full transition-colors"><Info /></button>
+                                    </div>
                                 </div>
+                                
+                                {/* Extra Slider for One-Sided Direction */}
+                                {sides === 'one' && (
+                                    <div className="flex items-center justify-center gap-4 bg-slate-50 p-3 rounded-lg border border-slate-200 animate-fade-up">
+                                        <span className={`text-sm font-medium ${tail === 'left' ? 'text-[#184B44]' : 'text-slate-400'}`}>Left Tailed (Lower Bound)</span>
+                                        <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                            <input type="checkbox" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked={tail === 'right'} onChange={() => setTail(t => t === 'left' ? 'right' : 'left')}/>
+                                            <label className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"></label>
+                                        </div>
+                                        <span className={`text-sm font-medium ${tail === 'right' ? 'text-[#184B44]' : 'text-slate-400'}`}>Right Tailed (Upper Bound)</span>
+                                        {/* Info Icon for One-Sided Tail - Conditional */}
+                                        <button onClick={() => setModalContent('one-sided')} className="text-[#184B44] hover:bg-[#e6fffa] p-2 rounded-full transition-colors"><Info /></button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Input Fields */}
@@ -458,14 +500,36 @@
                                         </>
                                     ) : (
                                         <>
-                                             <div>
-                                                <label className="block text-sm font-medium text-slate-700 mb-1">Lower CI Limit (comma-separated)</label>
-                                                <textarea className="w-full h-24 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#184B44] focus:border-[#184B44] outline-none resize-none font-mono text-sm" placeholder="8.1, 15.5" value={lowerInput} onChange={(e) => setLowerInput(e.target.value)}></textarea>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-slate-700 mb-1">Upper CI Limit (comma-separated)</label>
-                                                <textarea className="w-full h-24 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#184B44] focus:border-[#184B44] outline-none resize-none font-mono text-sm" placeholder="12.9, 25.0" value={upperInput} onChange={(e) => setUpperInput(e.target.value)}></textarea>
-                                            </div>
+                                             {/* For CI -> SE:
+                                                Two-sided: Show Lower & Upper.
+                                                One-sided Left: Show Mean & Lower (Bound).
+                                                One-sided Right: Show Mean & Upper (Bound).
+                                                
+                                                We added Mean input for one-sided calculations.
+                                                If two-sided, Mean is not strictly needed for width method, but we can hide it to keep UI simple or show it. 
+                                                Given prompt "only the lower CI limit input box should be visible", we assume this applies to the *Limit* boxes. 
+                                             */}
+                                             
+                                             {sides === 'one' && (
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-1">Mean Estimate (comma-separated)</label>
+                                                    <textarea className="w-full h-24 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#184B44] focus:border-[#184B44] outline-none resize-none font-mono text-sm" placeholder="10.5, 20.1" value={meanInput} onChange={(e) => setMeanInput(e.target.value)}></textarea>
+                                                </div>
+                                             )}
+
+                                             {(sides === 'two' || (sides === 'one' && tail === 'left')) && (
+                                                 <div>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-1">Lower CI Limit (comma-separated)</label>
+                                                    <textarea className="w-full h-24 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#184B44] focus:border-[#184B44] outline-none resize-none font-mono text-sm" placeholder="8.1, 15.5" value={lowerInput} onChange={(e) => setLowerInput(e.target.value)}></textarea>
+                                                </div>
+                                             )}
+
+                                             {(sides === 'two' || (sides === 'one' && tail === 'right')) && (
+                                                <div>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-1">Upper CI Limit (comma-separated)</label>
+                                                    <textarea className="w-full h-24 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#184B44] focus:border-[#184B44] outline-none resize-none font-mono text-sm" placeholder="12.9, 25.0" value={upperInput} onChange={(e) => setUpperInput(e.target.value)}></textarea>
+                                                </div>
+                                             )}
                                         </>
                                     )}
 
@@ -489,7 +553,9 @@
                                             <thead className="bg-slate-50 text-xs uppercase text-slate-500 sticky top-0">
                                                 <tr>
                                                     <th className="px-4 py-2 border-b">Input</th>
-                                                    <th className="px-4 py-2 border-b">{mode === 'se_to_ci' ? 'CI Range' : 'Std Error'}</th>
+                                                    <th className="px-4 py-2 border-b">
+                                                        {mode === 'se_to_ci' ? (sides === 'two' ? 'CI Range' : (tail === 'right' ? 'Upper Bound' : 'Lower Bound')) : 'Std Error'}
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
@@ -500,7 +566,11 @@
                                                         <tr key={row.id}>
                                                             <td className="px-4 py-2 font-mono text-slate-600 border-r border-slate-100 max-w-[150px] truncate" title={row.input}>{row.input}</td>
                                                             <td className={`px-4 py-2 font-mono font-medium ${row.error ? 'text-red-500' : 'text-[#184B44]'}`}>
-                                                                {row.error ? row.error : (mode === 'se_to_ci' ? `[${row.output1}, ${row.output2}]` : row.output1)}
+                                                                {row.error ? row.error : (
+                                                                    mode === 'se_to_ci' && sides === 'two' 
+                                                                    ? `[${row.output1}, ${row.output2}]` 
+                                                                    : row.output1
+                                                                )}
                                                             </td>
                                                         </tr>
                                                     ))
@@ -521,17 +591,32 @@
                     </main>
 
                     {/* Modal */}
-                    {showModal && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onClick={() => setShowModal(false)}>
+                    {modalContent && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onClick={() => setModalContent(null)}>
                             <div className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-2xl relative animate-fade-up" onClick={e => e.stopPropagation()}>
-                                <button onClick={() => setShowModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><XIcon /></button>
-                                <h3 className="text-xl font-bold text-[#184B44] mb-4">One-Sided vs Two-Sided Intervals</h3>
-                                <div className="mb-4">
-                                    <img src="Two One sided.png" alt="One vs Two Sided" className="w-full rounded-lg border border-slate-200" style={{aspectRatio: "11/6"}} />
-                                </div>
-                                <p className="text-sm text-slate-600 leading-relaxed">
-                                    Choosing the right interval depends on whether you need to account for deviations in both directions or just one. A <strong>two-sided interval</strong> is used when any change is relevant, like testing if a new medication changes blood pressure either higher or lower than the current standard. A <strong>one-sided interval</strong> is used when you only care about a specific directional benefit, such as verifying that a new car battery lasts longer than the previous model.
-                                </p>
+                                <button onClick={() => setModalContent(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><XIcon /></button>
+                                
+                                {modalContent === 'two-sided' ? (
+                                    <>
+                                        <h3 className="text-xl font-bold text-[#184B44] mb-4">One-Sided vs Two-Sided Intervals</h3>
+                                        <div className="mb-4">
+                                            <img src="Two One sided.png" alt="One vs Two Sided" className="w-full rounded-lg border border-slate-200" style={{aspectRatio: "11/6"}} />
+                                        </div>
+                                        <p className="text-sm text-slate-600 leading-relaxed">
+                                            Choosing the right interval depends on whether you need to account for deviations in both directions or just one. A <strong>two-sided interval</strong> is used when any change is relevant, like testing if a new medication changes blood pressure either higher or lower than the current standard. A <strong>one-sided interval</strong> is used when you only care about a specific directional benefit, such as verifying that a new car battery lasts longer than the previous model.
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h3 className="text-xl font-bold text-[#184B44] mb-4">One-Sided Confidence Intervals</h3>
+                                        <div className="mb-4">
+                                            <img src="One sided CI.png" alt="One Sided CI" className="w-full rounded-lg border border-slate-200" style={{aspectRatio: "11/6"}} />
+                                        </div>
+                                        <p className="text-sm text-slate-600 leading-relaxed">
+                                            A <strong>one-sided confidence interval</strong> puts the entire significance level α into one tail (the shaded rejection region), so you get just one bound at confidence 1−α instead of two. In the <strong>left-tailed / lower-bound</strong> case, the interval is [L, ∞), meaning “we’re 95% confident the true value is at least L,” which fits questions like “Is a lightbulb’s mean lifetime ≥ 10,000 hours?” In the <strong>right-tailed / upper-bound</strong> case, the interval is (−∞, U], meaning “we’re 95% confident the true value is no more than U,” which fits questions like “Is average pollution ≤ the safety threshold?” You use a one-tailed CI when only one direction matters (and you’re willing to ignore the other), and it lines up with a one-tailed test: if the spec/null value falls beyond your one-sided bound in the wrong direction, you’d reject at level α.
+                                        </p>
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}
