@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entro.py | Threadminds</title>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --brand-primary: #184B44;
+            --brand-light: #2a6e64;
+            --brand-accent: #e6fffa;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f0fdfa;
+            margin: 0;
+            overflow-x: hidden;
+            color: black;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .animate-fade-up {
+            animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+        }
+
+        /* Founder Card Styles */
+        .founder-card {
+            background: white;
+            border: 1px solid rgba(24, 75, 68, 0.1);
+            border-radius: 1rem;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .founder-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(24, 75, 68, 0.15);
+            border-color: var(--brand-primary);
+        }
+
+        /* Square Image Container */
+        .profile-img-container {
+            width: 100%;
+            padding-top: 100%; /* Force 1:1 Aspect Ratio */
+            position: relative;
+            overflow: hidden;
+            border-bottom: 4px solid var(--brand-primary);
+            background-color: #e2e8f0;
+        }
+
+        .profile-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+            transition: transform 0.5s ease;
+        }
+
+        .founder-card:hover .profile-img {
+            transform: scale(1.05);
+        }
+
+        /* Header Gradient */
+        .header-bg {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(24, 75, 68, 0.1);
+        }
+
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(24, 75, 68, 0.2), transparent);
+            margin: 4rem 0;
+        }
+
+        /* Hero Section */
+        .welcome-hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #ccfbf1;
+            color: white;
+            position: sticky;
+            text-align: center;
+            padding: 2rem;
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            animation: bounce 2s infinite;
+            color: #e6fffa;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .role-badge {
+            display: inline-block;
+            background-color: #f0fdfa;
+            color: var(--brand-primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(24, 75, 68, 0.2);
+        }
+        
+        /* Wacky Button */
+        .wacky-btn {
+            background: linear-gradient(45deg, #184B44, #2a6e64, #0d9488, #184B44);
+            background-size: 300% 300%;
+            animation: gradient-shift 4s ease infinite;
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 1.125rem;
+            box-shadow: 0 10px 15px -3px rgba(24, 75, 68, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 2px solid rgba(255,255,255,0.2);
+            text-decoration: none;
+        }
+        
+        .wacky-btn:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(24, 75, 68, 0.5);
+        }
+        
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Icons
+        function ArrowRightIcon(props) {
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>;
+        }
+
+        function ArrowLeftIcon(props) {
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>;
+        }
+
+        function LinkedinIcon(props) {
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>;
+        }
+
+        function ScholarIcon(props) {
+            return <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>;
+        }
+
+        function App() {
+            const [scrollOpacity, setScrollOpacity] = useState(1);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const scrollY = window.scrollY;
+                    const windowHeight = window.innerHeight;
+                    // Fade out hero as user scrolls down the first 50% of the screen height
+                    const newOpacity = Math.max(0, 1 - (scrollY / (windowHeight * 0.5)));
+                    setScrollOpacity(newOpacity);
+                };
+
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {/* Hero Section */}
+                    <div className="welcome-hero" style={{ opacity: scrollOpacity }}>
+                        <div className="animate-fade-up">
+                             <img 
+                                src="Entropy.png" 
+                                alt="Entro.py" 
+                                className="w-full max-w-4xl h-auto"
+                                style={{ aspectRatio: '10/3' }} 
+                            />
+                        </div>
+                        <p className="mt-8 text-black font-light text-xl animate-fade-up" style={{animationDelay: '0.2s'}}>
+                            by Threadminds
+                        </p>
+                        <div className="scroll-indicator">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    {/* Header (Sticky, appears after hero) */}
+                    <header className="header-bg py-4 sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+                            <div className="flex items-center gap-2 transition-opacity hover:opacity-80 cursor-pointer">
+                                <img src="Entropy.png" alt="Entro.py" className="h-8 drop-shadow-sm" />
+                            </div>
+                            <div className="text-sm font-medium text-[#184B44] bg-[#e6fffa] px-3 py-1 rounded-full border border-[#184B44]/20 hidden sm:block">
+                                About Us
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="flex-grow max-w-7xl mx-auto px-6 py-12 w-full z-0 relative">
+
+                        {/* Mission Section */}
+                        <div className="max-w-4xl mx-auto text-center mb-16 animate-fade-up" style={{animationDelay: '0.1s'}}>
+                            <h1 className="text-5xl font-bold text-[#184B44] mb-6 tracking-tight">Democratizing Statistics</h1>
+                            <p className="text-xl text-slate-600 leading-relaxed mb-8">
+                                In an era driven by data, statistical literacy shouldn't be a privilege reserved for the few. 
+                                <span className="font-semibold text-[#184B44]"> Entro.py</span> is built on the belief that complex analytical tools should be accessible, transparent, and usable by everyone - from students and researchers to curious minds.
+                            </p>
+                            <p className="text-lg text-slate-500 leading-relaxed mb-12">
+                                By simplifying the interface to powerful statistical methods without compromising on rigor, we aim to bridge the gap between raw data and meaningful insight. Whether you're validating a hypothesis or exploring a new dataset, our tools empower you to find the answers you need, code-free.
+                            </p>
+                            
+                            {/* Wacky Button */}
+                            <a href="Title page.html" className="wacky-btn group">
+                                <span>Launch the Statistical Multiverse</span>
+                                <ArrowRightIcon className="w-5 h-5 ml-1 transition-transform group-hover:translate-x-1" />
+                            </a>
+                        </div>
+
+                        <div className="section-divider animate-fade-up" style={{animationDelay: '0.2s'}}></div>
+
+                        {/* Founders Section */}
+                        <div className="animate-fade-up" style={{animationDelay: '0.3s'}}>
+                            <h2 className="text-3xl font-bold text-[#184B44] mb-12 text-center">Meet the Co-Founders</h2>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+                                {/* Dr. Victor Ghosh */}
+                                <div className="founder-card group">
+                                    <div className="profile-img-container">
+                                        <img src="victor.jpeg" alt="Dr. Victor Ghosh" className="profile-img" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#184B44]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
+                                            <div className="text-white text-center">
+                                                <p className="font-bold text-lg">Dr. Victor Ghosh</p>
+                                                <p className="text-sm opacity-90">CEO & Co-founder</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-8 text-center flex-grow flex flex-col justify-between">
+                                        <div>
+                                            <span className="role-badge">CEO & Co-founder</span>
+                                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Dr. Victor Ghosh</h3>
+                                            <div className="text-slate-500 mb-6 text-sm leading-relaxed space-y-2 text-left">
+                                                <p>• <strong>Clinician–Innovator:</strong> Translating unmet clinical needs into actionable product direction.</p>
+                                                <p>• <strong>Innovation Fellow (SiB):</strong> Trained at AIIMS New Delhi in the Stanford Biodesign approach to build practical MedTech solutions.</p>
+                                                <p>• <strong>Clinical Grounding:</strong> MBBS from Andhra Medical College with systems thinking and hands-on experience.</p>
+                                                <p>• <strong>Research Leader:</strong> Published researcher experienced in evidence synthesis and clinically relevant studies.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-center gap-4 mt-4">
+                                            <a href="https://www.linkedin.com/in/dr-victor-ghosh/" target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#0077b5] hover:bg-blue-50 rounded-full transition-colors">
+                                                <LinkedinIcon className="w-6 h-6" />
+                                            </a>
+                                            <a href="https://scholar.google.com/citations?hl=en&user=n6SPwNkAAAAJ" target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#184B44] hover:bg-teal-50 rounded-full transition-colors">
+                                                <ScholarIcon className="w-6 h-6" />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Dr. Aman Bhonsale */}
+                                <div className="founder-card group">
+                                    <div className="profile-img-container">
+                                        <img src="Aman.jpeg" alt="Dr. Aman Bhonsale" className="profile-img" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#184B44]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
+                                            <div className="text-white text-center">
+                                                <p className="font-bold text-lg">Dr. Aman Bhonsale</p>
+                                                <p className="text-sm opacity-90">CTO & Co-founder</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-8 text-center flex-grow flex flex-col justify-between">
+                                        <div>
+                                            <span className="role-badge">CTO & Co-founder</span>
+                                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Dr. Aman Bhonsale</h3>
+                                            <div className="text-slate-500 mb-6 text-sm leading-relaxed space-y-2 text-left">
+                                                <p>• <strong>Evidence Workflow Architect:</strong> Focused on building rigorous, AI-enabled workflows for generating high-quality evidence.</p>
+                                                <p>• <strong>Research Scientist:</strong> Currently at JIPMER (Puducherry), leading advanced computational research initiatives.</p>
+                                                <p>• <strong>Data Science Expert:</strong> AIIMS Nagpur alumnus with deep expertise in medical research, biostatistics, and machine learning.</p>
+                                                <p>• <strong>Contributor:</strong> Active in peer-reviewed clinical research aimed at robust evidence generation.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-center gap-4 mt-4">
+                                            <a href="https://www.linkedin.com/in/dr-aman-bhonsale-249829278" target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#0077b5] hover:bg-blue-50 rounded-full transition-colors">
+                                                <LinkedinIcon className="w-6 h-6" />
+                                            </a>
+                                            <a href="https://scholar.google.com/citations?user=ymH_K1IAAAAJ&hl=en" target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-[#184B44] hover:bg-teal-50 rounded-full transition-colors">
+                                                <ScholarIcon className="w-6 h-6" />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+
+
+                    {/* Site Footer */}
+                    <footer className="bg-white border-t border-slate-200">
+                        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col items-center justify-center gap-4">
+                            <div className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity">
+                                <span className="text-sm font-semibold text-[#184B44]">Entro.py</span>
+                                <span className="text-slate-300">|</span>
+                                <span className="text-sm text-slate-500">by Threadminds</span>
+                            </div>
+                            <p className="text-xs text-slate-400">&copy; {new Date().getFullYear()} Threadminds. All rights reserved.</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
