@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threadminds - Research Tools for the Next Gen</title>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            overflow-x: hidden;
+            background-color: #0f172a;
+            color: white;
+        }
+
+        /* Threadminds Theme Colors */
+        :root {
+            --tm-purple: #6B46C1;
+            --tm-yellow: #F6E05E;
+            --entro-teal: #184B44;
+            --esquir-brown: #5D4037;
+            --esquir-beige: #D7CCC8;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .animate-enter {
+            animation: fadeInUp 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+        }
+
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #4c1d95 0%, #0f172a 100%);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .hero-logo {
+            filter: drop-shadow(0 0 20px rgba(246, 224, 94, 0.3));
+        }
+
+        /* Content Sections */
+        .content-container {
+            position: relative;
+            z-index: 20;
+            background: transparent; /* Allows seeing hero behind initially if needed, but we'll use solid backgrounds for sections */
+        }
+
+        .product-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            position: relative;
+            transition: background 0.5s ease;
+        }
+
+        /* Entro.py Theme */
+        .section-entro {
+            background: linear-gradient(180deg, #0f172a 0%, #184B44 100%);
+        }
+
+        /* ESQUi.R Theme */
+        .section-esquir {
+            background: linear-gradient(180deg, #184B44 0%, #3E2723 100%);
+        }
+
+        /* Team Theme */
+        .section-team {
+            background: #1a1a1a;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 3rem;
+            max-width: 1200px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: scale(1.01);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Typography & Buttons */
+        .gradient-text-tm {
+            background: linear-gradient(to right, #D8B4FE, #F6E05E);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .gradient-text-entro {
+            background: linear-gradient(to right, #5EEAD4, #ccfbf1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-text-esquir {
+            background: linear-gradient(to right, #D7CCC8, #FFAB91);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-primary {
+            padding: 1rem 2rem;
+            border-radius: 99px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            display: inline-block;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .btn-entro {
+            background: #2a6e64;
+            color: white;
+            box-shadow: 0 0 20px rgba(42, 110, 100, 0.4);
+        }
+        .btn-entro:hover {
+            background: #184B44;
+            box-shadow: 0 0 30px rgba(42, 110, 100, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-esquir {
+            background: #6D4C41; /* Brown-ish */
+            color: #EFEBE9;
+            box-shadow: 0 0 20px rgba(109, 76, 65, 0.4);
+        }
+        .btn-esquir:hover {
+            background: #5D4037;
+            box-shadow: 0 0 30px rgba(109, 76, 65, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* Avatar */
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .scroll-down {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); }
+            40% { transform: translate(-50%, -10px); }
+            60% { transform: translate(-50%, -5px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [scrollOpacity, setScrollOpacity] = useState(1);
+            
+            useEffect(() => {
+                const handleScroll = () => {
+                    const scrollY = window.scrollY;
+                    const windowHeight = window.innerHeight;
+                    // Fade hero out faster
+                    const newOpacity = Math.max(0, 1 - (scrollY / (windowHeight * 0.8)));
+                    setScrollOpacity(newOpacity);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            return (
+                <div>
+                    {/* Hero Section (Sticky) */}
+                    <div className="hero-section" style={{ opacity: scrollOpacity, pointerEvents: scrollOpacity <= 0 ? 'none' : 'auto' }}>
+                        <div className="text-center animate-enter">
+                            <img src="threadminds.png" alt="Threadminds Logo" className="h-32 md:h-48 mx-auto mb-6 hero-logo floating" />
+                            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter mb-4">
+                                <span className="gradient-text-tm">Threadminds</span>
+                            </h1>
+                            <p className="text-xl md:text-2xl text-slate-300 font-light tracking-wide">
+                                Weaving Intelligence into Research
+                            </p>
+                        </div>
+                        <div className="scroll-down">
+                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+                        </div>
+                    </div>
+
+                    {/* Main Content (Scrolls over) */}
+                    <div className="content-container">
+                        
+                        {/* Entro.py Section */}
+                        <section className="product-section section-entro">
+                            <div className="glass-card flex flex-col md:flex-row items-center gap-12">
+                                <div className="md:w-1/2 text-center md:text-left">
+                                    <div className="mb-6">
+                                        <img src="Entropy.png" alt="Entro.py" className="h-16 mb-4 inline-block" style={{filter: "brightness(0) invert(1)"}} /> 
+                                    </div>
+                                    <h2 className="text-4xl font-bold mb-6 gradient-text-entro">Democratizing Statistics</h2>
+                                    <p className="text-lg text-slate-300 mb-6 leading-relaxed">
+                                        In an era driven by data, statistical literacy shouldn't be a privilege. 
+                                        <strong>Entro.py</strong> bridges the gap between raw data and meaningful insight. 
+                                        Accessible, transparent, and code-free tools for students, researchers, and curious minds.
+                                    </p>
+                                    <ul className="text-slate-400 mb-8 space-y-2 text-sm">
+                                        <li className="flex items-center gap-2">✓ Advanced Meta-Analysis Tools</li>
+                                        <li className="flex items-center gap-2">✓ Automated Assumption Checks</li>
+                                        <li className="flex items-center gap-2">✓ Open Source & Collaborative</li>
+                                    </ul>
+                                    <a href="index.html" className="btn-primary btn-entro">Launch Entro.py</a>
+                                </div>
+                                <div className="md:w-1/2 flex justify-center">
+                                    {/* Abstract visual representation of stats/graph */}
+                                    <div className="w-full h-64 bg-gradient-to-tr from-[#2a6e64] to-[#184B44] rounded-2xl flex items-center justify-center opacity-80 shadow-2xl border border-white/10">
+                                        <span className="text-6xl">Σ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* ESQUi.R Section */}
+                        <section className="product-section section-esquir">
+                            <div className="glass-card flex flex-col md:flex-row-reverse items-center gap-12">
+                                <div className="md:w-1/2 text-center md:text-right">
+                                    <div className="mb-6">
+                                         <img src="Esquir.png" alt="ESQUi.R" className="h-16 mb-4 inline-block" style={{filter: "brightness(0) invert(1)"}} />
+                                    </div>
+                                    <h2 className="text-4xl font-bold mb-6 gradient-text-esquir">Systematic Review <br/>Re-Imagined</h2>
+                                    <p className="text-lg text-[#D7CCC8] mb-6 leading-relaxed">
+                                        <strong>ESQUi.R</strong> tackles fragmentation and manual grind. A unified, PICO-driven workflow 
+                                        for Evidence Synthesis. From intelligent query translation across major databases to 
+                                        ML-augmented bias assessment.
+                                    </p>
+                                    <ul className="text-[#A1887F] mb-8 space-y-2 text-sm flex flex-col items-end">
+                                        <li className="flex items-center gap-2">Unified Search Engine ✓</li>
+                                        <li className="flex items-center gap-2">AI-Accelerated Screening ✓</li>
+                                        <li className="flex items-center gap-2">Structured Data Extraction ✓</li>
+                                    </ul>
+                                    <a href="#" className="btn-primary btn-esquir">Explore ESQUi.R</a>
+                                </div>
+                                <div className="md:w-1/2 flex justify-center">
+                                    {/* Abstract visual representation of documents/search */}
+                                    <div className="w-full h-64 bg-gradient-to-bl from-[#5D4037] to-[#3E2723] rounded-2xl flex items-center justify-center opacity-80 shadow-2xl border border-white/10">
+                                        <span className="text-6xl">🔍</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Founders / Footer */}
+                        <section className="section-team py-16 px-6">
+                            <div className="max-w-4xl mx-auto text-center">
+                                <h3 className="text-2xl font-bold mb-12 text-slate-500 uppercase tracking-widest">Architects of the Future</h3>
+                                <div className="flex justify-center gap-12 flex-wrap">
+                                    <div className="flex flex-col items-center">
+                                        <img src="victor.jpeg" alt="Dr. Victor Ghosh" className="avatar mb-4" />
+                                        <h4 className="font-bold text-lg">Dr. Victor Ghosh</h4>
+                                        <span className="text-xs text-slate-500 uppercase tracking-wide">Co-Founder | CEO</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <img src="aman.jpeg" alt="Dr. Aman Bhonsale" className="avatar mb-4" />
+                                        <h4 className="font-bold text-lg">Dr. Aman Bhonsale</h4>
+                                        <span className="text-xs text-slate-500 uppercase tracking-wide">Co-Founder | CTO</span>
+                                    </div>
+                                </div>
+                                <div className="mt-16 pt-8 border-t border-white/10 text-slate-600 text-sm">
+                                    &copy; {new Date().getFullYear()} Threadminds Pvt. Ltd. | Integrating Intelligence.
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
