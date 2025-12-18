@@ -1,0 +1,1411 @@
+\<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Risk and odds conversion</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Inter font (300–700) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- React (UMD) + Babel for JSX -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- SheetJS (optional .xlsx support) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    // Disable right-click
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    const redirectHome = () => {
+      window.location.href = "index.html";
+    };
+
+    // DevTools detection
+    setInterval(() => {
+      if (
+        window.outerWidth - window.innerWidth > 160 ||
+        window.outerHeight - window.innerHeight > 160
+      ) {
+        redirectHome();
+      }
+    }, 500);
+
+    // Disable DevTools shortcuts
+    document.addEventListener('keydown', e => {
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && ["I","J","C"].includes(e.key)) ||
+        (e.ctrlKey && e.key === "U")
+      ) {
+        e.preventDefault();
+        redirectHome();
+      }
+    });
+  </script>
+
+  <style>
+    /* Global look + shared component classes (exact theme) */
+    :root {
+      --brand-primary: #184B44;
+      --brand-light: #2a6e64;
+      --brand-accent: #e6fffa;
+    }
+
+    body {
+      background-color: #f0fdfa;
+      background-image: radial-gradient(#ccfbf1 1px, transparent 1px);
+      background-size: 20px 20px;
+      margin: 0;
+      overflow-x: hidden;
+      font-family: 'Inter', sans-serif;
+      color: #334155;
+      font-size: 16px;
+      line-height: 24px;
+    }
+
+    @keyframes fadeIn { from { opacity:0; transform: translateY(20px);} to {opacity:1; transform: translateY(0);} }
+    .animate-fade-up { animation: fadeIn 0.6s cubic-bezier(0.4,0,0.2,1) forwards; opacity:0; }
+
+    .tool-card {
+      background:#fff;
+      border:1px solid rgba(24,75,68,0.1);
+      border-radius:1rem;
+      padding:2rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+    }
+    .tool-card-2 {
+      background:#e6fffa;
+      border-top:1px solid rgba(24,75,68,0.1);
+      border-radius:1rem;
+      padding:2rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+    }
+
+    .btn-brand {
+      background-color: var(--brand-primary);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-brand:hover {
+      background-color: var(--brand-light);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(24,75,68,0.2);
+    }
+
+    .btn-secondary {
+      background-color: white;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-secondary:hover {
+      border-color: var(--brand-primary);
+      background:#f8fafc;
+    }
+
+    .btn-danger {
+      background:#fee2e2;
+      color:#991b1b;
+      border:1px solid #fecaca;
+      padding: 0.5rem 1rem;
+      border-radius:0.5rem;
+      font-weight:500;
+      transition:all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-danger:hover {
+      background:#fecaca;
+      border-color:#f87171;
+    }
+
+    .toggle-checkbox:checked { right:0; border-color:#184B44; }
+    .toggle-checkbox:checked + .toggle-label { background-color:#184B44; }
+
+    .modal-overlay { background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+
+    /* Inputs: monospace for comma-separated content */
+    .mono-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 14px;
+      line-height: 20px;
+      font-weight: 400;
+    }
+
+    /* Logo fallback (only if image missing) */
+    .logo-fallback { font-family: Gungsuh, serif; color: #184B44; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useEffect, useMemo, useRef, useState } = React;
+
+    // -----------------------------
+    // Parsing + utilities
+    // -----------------------------
+
+    const nf = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 10, useGrouping: false });
+    function fmt(x) {
+      if (x === Infinity) return '∞';
+      if (x === -Infinity) return '−∞';
+      if (x === null || x === undefined) return '—';
+      if (typeof x !== 'number' || !Number.isFinite(x)) return '—';
+      return nf.format(x);
+    }
+
+    function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
+
+    function splitList(raw) {
+      const s = String(raw ?? '');
+      if (s.trim() === '') return [];
+      const parts = s.split(',').map(t => t.trim());
+      while (parts.length && parts[parts.length - 1] === '') parts.pop();
+      return parts;
+    }
+
+    function parseNumberToken(token) {
+      const t = String(token ?? '').trim();
+      if (t === '') return { raw: '', ok: false, missing: true, val: NaN };
+      const n = Number(t);
+      if (Number.isFinite(n)) return { raw: t, ok: true, missing: false, val: n };
+      return { raw: t, ok: false, missing: false, val: NaN };
+    }
+
+    function parseList(raw) {
+      return splitList(raw).map(parseNumberToken);
+    }
+
+    function detectDelimiter(line) {
+      const c = (line.match(/,/g) || []).length;
+      const t = (line.match(/\t/g) || []).length;
+      const s = (line.match(/;/g) || []).length;
+      const m = Math.max(c, t, s);
+      if (m === t) return '\t';
+      if (m === s) return ';';
+      return ',';
+    }
+
+    function parseCSV(text, delim) {
+      const rows = [];
+      let row = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        const next = text[i + 1];
+        if (ch === '"') {
+          if (inQuotes && next === '"') { cur += '"'; i++; }
+          else { inQuotes = !inQuotes; }
+        } else if (!inQuotes && ch === delim) {
+          row.push(cur); cur = '';
+        } else if (!inQuotes && (ch === '\n' || ch === '\r')) {
+          if (ch === '\r' && next === '\n') i++;
+          row.push(cur);
+          rows.push(row);
+          row = [];
+          cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+      if (cur.length || row.length) { row.push(cur); rows.push(row); }
+      while (rows.length && rows[rows.length - 1].every(x => String(x ?? '').trim() === '')) rows.pop();
+      return rows;
+    }
+
+    function looksLikeHeader(firstRow) {
+      if (!firstRow || !firstRow.length) return false;
+      let nonNumeric = 0, numeric = 0;
+      for (const cell of firstRow) {
+        const t = String(cell ?? '').trim();
+        if (!t) continue;
+        const n = Number(t);
+        if (Number.isFinite(n)) numeric++; else nonNumeric++;
+      }
+      return nonNumeric > 0 && nonNumeric >= numeric;
+    }
+
+    function csvEscape(x) {
+      const s = String(x ?? '');
+      if (/[^\S\r\n]*[\n\r,\"]/g.test(s) || /[\n\r,\"]/g.test(s)) return '"' + s.replace(/\"/g, '""') + '"';
+      return s;
+    }
+
+    // -----------------------------
+    // Internal-only computation
+    // (No equations shown in UI)
+    // -----------------------------
+
+    function riskToOdds(p) {
+      return p / (1 - p);
+    }
+
+    function oddsToRisk(o) {
+      return o / (1 + o);
+    }
+
+    // -----------------------------
+    // UI components
+    // -----------------------------
+
+    function StatusIcon({ status }) {
+      if (status === 'ok') {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5" stroke="#166534" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+      }
+      if (status === 'warn') {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 9v4" stroke="#b45309" strokeWidth="2.4" strokeLinecap="round" />
+            <path d="M12 17h.01" stroke="#b45309" strokeWidth="3" strokeLinecap="round" />
+            <path d="M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z" stroke="#b45309" strokeWidth="2" />
+          </svg>
+        );
+      }
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 8v5" stroke="#b91c1c" strokeWidth="2.4" strokeLinecap="round" />
+          <path d="M12 16h.01" stroke="#b91c1c" strokeWidth="3" strokeLinecap="round" />
+          <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="#b91c1c" strokeWidth="2" />
+        </svg>
+      );
+    }
+
+    function InfoIconButton({ onClick, label }) {
+      return (
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-slate-200 bg-white hover:border-[var(--brand-primary)] hover:shadow-sm transition"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 17v-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M12 7h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        </button>
+      );
+    }
+
+    function Modal({ open, title, children, onClose }) {
+      if (!open) return null;
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" role="dialog" aria-modal="true">
+          <div className="w-full max-w-2xl bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-200">
+              <div className="text-xl font-bold text-slate-800">{title}</div>
+              <button type="button" className="btn-secondary text-sm" onClick={onClose}>Close</button>
+            </div>
+            <div className="p-4">{children}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function Toggle({ checked, onChange, leftLabel, rightLabel, helper }) {
+      return (
+        <div className="w-full">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-medium text-slate-800">{leftLabel}</div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-slate-700">{checked ? rightLabel : leftLabel}</span>
+              <div className="relative inline-block w-12 align-middle select-none">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) => onChange(e.target.checked)}
+                  className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-2 border-slate-300 appearance-none cursor-pointer transition-all duration-200 ease-in-out"
+                  style={{ top: '0px', right: checked ? '0px' : '24px' }}
+                />
+                <label className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-200 cursor-pointer transition" />
+              </div>
+            </div>
+          </div>
+          {helper ? <div className="text-sm text-slate-600 mt-1 leading-relaxed">{helper}</div> : null}
+        </div>
+      );
+    }
+
+    function Tabs({ value, onChange, options }) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
+          {options.map((opt) => {
+            const active = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onChange(opt.value)}
+                className={
+                  "w-full text-left text-sm font-medium px-3 py-2 rounded-xl border transition leading-snug " +
+                  (active
+                    ? "bg-[var(--brand-primary)] text-white border-[var(--brand-primary)] shadow"
+                    : "bg-white text-slate-700 border-slate-200 hover:border-[var(--brand-primary)]")
+                }
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    function InputBar({ id, label, helper, value, onChange, placeholder, rightAdornment }) {
+      return (
+        <div className="w-full">
+          <div className="flex items-center justify-between gap-3">
+            <label className="block text-sm font-medium text-slate-800" htmlFor={id} title={helper}>{label}</label>
+            {rightAdornment ? <div className="shrink-0">{rightAdornment}</div> : null}
+          </div>
+          <textarea
+            id={id}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            rows={2}
+            className={
+              "mono-input mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 " +
+              "text-sm focus:outline-none focus:ring-4 focus:ring-[rgba(24,75,68,0.15)] focus:border-[var(--brand-primary)]"
+            }
+          />
+          <div className="text-xs text-slate-500 mt-1 font-normal">{helper}</div>
+        </div>
+      );
+    }
+
+    // -----------------------------
+    // App
+    // -----------------------------
+
+    const MODE = {
+      RR_P0_TO_OR: 'RR_P0_TO_OR',
+      OR_P0_TO_RR: 'OR_P0_TO_RR',
+      RISK_ODDS: 'RISK_ODDS',
+      P1P0_TO_BOTH: 'P1P0_TO_BOTH'
+    };
+
+    function App() {
+      const [logoOk, setLogoOk] = useState(true);
+      const [mode, setMode] = useState(MODE.RR_P0_TO_OR);
+
+      // Mode 3 direction helper
+      const [riskToOddsDir, setRiskToOddsDir] = useState(true); // true: risk→odds, false: odds→risk
+
+      // Inputs (comma-separated lists)
+      const [inputs, setInputs] = useState({
+        rr: '',
+        or: '',
+        p0: '',
+        p1: '',
+        p: '',
+        odds: ''
+      });
+
+      const [results, setResults] = useState([]);
+      const [csvText, setCsvText] = useState('');
+      const [lengthNote, setLengthNote] = useState('');
+      const [fieldSummary, setFieldSummary] = useState({ kind: 'ok', text: 'Ready.' });
+
+      // File import
+      const fileInputRef = useRef(null);
+      const [dropActive, setDropActive] = useState(false);
+      const [fileStatus, setFileStatus] = useState('No file loaded.');
+      const [parsedFile, setParsedFile] = useState(null); // { rows, filename, headerGuess }
+      const [colModalOpen, setColModalOpen] = useState(false);
+      const [hasHeader, setHasHeader] = useState(true);
+      const [colSelections, setColSelections] = useState({});
+
+      // Info modal
+      const [infoModal, setInfoModal] = useState({ open: false, type: 'p0' });
+
+      function updateInput(key, value) {
+        setInputs((prev) => ({ ...prev, [key]: value }));
+      }
+
+      const inputMeta = useMemo(() => ({
+        rr: {
+          label: 'Relative risk (RR) list',
+          helper: 'RR values (must be > 0). Comma-separated.',
+          placeholder: 'e.g., 0.75, 1.10, 2.05'
+        },
+        or: {
+          label: 'Odds ratio (OR) list',
+          helper: 'OR values (must be > 0). Comma-separated.',
+          placeholder: 'e.g., 0.65, 1.25, 3.10'
+        },
+        p0: {
+          label: 'Baseline risk (p0) list',
+          helper: 'Risk in the control/unexposed group as a probability. Must satisfy 0 < p0 < 1. Comma-separated.',
+          placeholder: 'e.g., 0.10, 0.25, 0.40'
+        },
+        p1: {
+          label: 'Risk in exposed (p1) list',
+          helper: 'Risk in the exposed/treated group as a probability. Must satisfy 0 < p1 < 1. Comma-separated.',
+          placeholder: 'e.g., 0.08, 0.30, 0.60'
+        },
+        p: {
+          label: 'Risk (p) list',
+          helper: 'Risk as a probability. Must satisfy 0 < p < 1. Comma-separated.',
+          placeholder: 'e.g., 0.05, 0.20, 0.75'
+        },
+        odds: {
+          label: 'Odds list',
+          helper: 'Odds values (must be ≥ 0). Comma-separated.',
+          placeholder: 'e.g., 0.10, 0.25, 3.00'
+        }
+      }), []);
+
+      const requiredKeys = useMemo(() => {
+        if (mode === MODE.RR_P0_TO_OR) return ['rr', 'p0'];
+        if (mode === MODE.OR_P0_TO_RR) return ['or', 'p0'];
+        if (mode === MODE.RISK_ODDS) return [riskToOddsDir ? 'p' : 'odds'];
+        return ['p1', 'p0'];
+      }, [mode, riskToOddsDir]);
+
+      const visibleManualKeys = useMemo(() => {
+        if (mode === MODE.RR_P0_TO_OR) return ['rr', 'p0'];
+        if (mode === MODE.OR_P0_TO_RR) return ['or', 'p0'];
+        if (mode === MODE.RISK_ODDS) return [riskToOddsDir ? 'p' : 'odds'];
+        return ['p1', 'p0'];
+      }, [mode, riskToOddsDir]);
+
+      const assumptions = useMemo(() => {
+        const base = [
+          'RR↔OR conversion requires a baseline risk (p0) or both group risks; the same RR/OR can correspond to different conversions depending on baseline risk.',
+          'Conversions treat “risk” as a probability for a binary outcome over a stated time horizon; ensure RR/OR/p0 refer to the same outcome and time window.'
+        ];
+        const extra = [];
+        if (mode === MODE.RR_P0_TO_OR) extra.push('This mode converts RR to OR by first deriving the treated risk (p1) from RR and baseline risk (p0).');
+        if (mode === MODE.OR_P0_TO_RR) extra.push('This mode converts OR to RR by translating odds under the baseline risk (p0) to an implied treated risk (p1).');
+        if (mode === MODE.RISK_ODDS) extra.push(riskToOddsDir ? 'This helper converts risk values to odds.' : 'This helper converts odds values to risk.');
+        if (mode === MODE.P1P0_TO_BOTH) extra.push('This mode computes RR and OR directly from group risks (p1 and p0).');
+        return [...base, ...extra];
+      }, [mode, riskToOddsDir]);
+
+      // Field-level validation summary (strict typing + range hints)
+      useEffect(() => {
+        const problems = [];
+
+        for (const k of requiredKeys) {
+          const parsed = parseList(inputs[k]);
+          const bad = parsed.filter(t => !t.ok);
+          if (bad.length) {
+            const samples = bad.slice(0, 5).map(t => (t.missing ? '(blank)' : `'${t.raw}'`)).join(', ');
+            problems.push(`${inputMeta[k].label}: invalid value(s) → ${samples}${bad.length > 5 ? '…' : ''}`);
+          }
+
+          const nums = parsed.filter(t => t.ok).map(t => t.val);
+          if (k === 'rr' || k === 'or') {
+            if (nums.some(n => !(n > 0))) problems.push(`${inputMeta[k].label}: values must be > 0`);
+          }
+          if (k === 'p0' || k === 'p1' || k === 'p') {
+            if (nums.some(n => !(n > 0 && n < 1))) problems.push(`${inputMeta[k].label}: values must satisfy 0 < p < 1`);
+          }
+          if (k === 'odds') {
+            if (nums.some(n => !(n >= 0))) problems.push(`${inputMeta[k].label}: values must be ≥ 0`);
+          }
+        }
+
+        if (problems.length) setFieldSummary({ kind: 'err', text: problems[0] + (problems.length > 1 ? ` (+${problems.length - 1} more)` : '') });
+        else setFieldSummary({ kind: 'ok', text: 'Ready.' });
+      }, [inputs, requiredKeys, inputMeta]);
+
+      function alignRows() {
+        const reqParsed = requiredKeys.map((k) => ({ k, parsed: parseList(inputs[k]) }));
+        const lengths = reqParsed.map(x => x.parsed.length);
+        const minLen = lengths.length ? Math.min(...lengths) : 0;
+        const maxLen = lengths.length ? Math.max(...lengths) : 0;
+
+        const extras = reqParsed
+          .filter(x => x.parsed.length > minLen)
+          .map(x => ({ key: x.k, extra: x.parsed.length - minLen }));
+
+        const rows = [];
+        for (let i = 0; i < minLen; i++) {
+          const row = { idx: i, vals: {}, raw: {}, ok: true, missing: false };
+          for (const { k, parsed } of reqParsed) {
+            const t = parsed[i];
+            row.raw[k] = t?.raw ?? '';
+            row.vals[k] = t?.val;
+            if (!t || !t.ok) { row.ok = false; row.missing = row.missing || !!t?.missing; }
+          }
+          rows.push(row);
+        }
+        return { rows, minLen, maxLen, extras };
+      }
+
+      function computeRow(row) {
+        const warn = [];
+        if (!row.ok) {
+          return {
+            status: 'err',
+            message: row.missing ? 'Missing value(s) in required fields.' : 'Invalid value(s) in required fields.',
+            warnings: row.missing ? 'Missing input(s).' : 'Invalid input(s).',
+            ...echoInputs(row)
+          };
+        }
+
+        try {
+          if (mode === MODE.RR_P0_TO_OR) {
+            const rr = row.vals.rr;
+            const p0 = row.vals.p0;
+            if (!(rr > 0)) throw new Error('RR must be > 0.');
+            if (!(p0 > 0 && p0 < 1)) throw new Error('Baseline risk p0 must satisfy 0 < p0 < 1.');
+
+            const p1 = rr * p0;
+            if (!(p1 > 0 && p1 < 1)) throw new Error('Derived treated risk (p1) must satisfy 0 < p1 < 1. Check RR and p0.');
+
+            const odds0 = riskToOdds(p0);
+            const odds1 = riskToOdds(p1);
+            const OR = odds1 / odds0;
+            if (!(OR > 0) || !Number.isFinite(OR)) throw new Error('Cannot compute OR (check inputs).');
+
+            return {
+              status: warn.length ? 'warn' : 'ok',
+              message: warn.length ? 'Computed with warnings.' : 'Computed.',
+              rr, p0, p1, odds0, odds1, or: OR,
+              warnings: warn.join(' | ')
+            };
+          }
+
+          if (mode === MODE.OR_P0_TO_RR) {
+            const OR = row.vals.or;
+            const p0 = row.vals.p0;
+            if (!(OR > 0)) throw new Error('OR must be > 0.');
+            if (!(p0 > 0 && p0 < 1)) throw new Error('Baseline risk p0 must satisfy 0 < p0 < 1.');
+
+            const odds0 = riskToOdds(p0);
+            const odds1 = OR * odds0;
+            if (!(odds1 >= 0) || !Number.isFinite(odds1)) throw new Error('Cannot compute implied odds (check inputs).');
+
+            const p1 = oddsToRisk(odds1);
+            if (!(p1 > 0 && p1 < 1)) throw new Error('Implied treated risk (p1) must satisfy 0 < p1 < 1.');
+
+            const rr = p1 / p0;
+            if (!(rr > 0) || !Number.isFinite(rr)) throw new Error('Cannot compute RR (check inputs).');
+
+            return {
+              status: warn.length ? 'warn' : 'ok',
+              message: warn.length ? 'Computed with warnings.' : 'Computed.',
+              or: OR, p0, p1, odds0, odds1, rr,
+              warnings: warn.join(' | ')
+            };
+          }
+
+          if (mode === MODE.RISK_ODDS) {
+            if (riskToOddsDir) {
+              const p = row.vals.p;
+              if (!(p > 0 && p < 1)) throw new Error('Risk p must satisfy 0 < p < 1.');
+              const odds = riskToOdds(p);
+              if (!(odds >= 0) || !Number.isFinite(odds)) throw new Error('Cannot compute odds (check input).');
+              return {
+                status: warn.length ? 'warn' : 'ok',
+                message: warn.length ? 'Computed with warnings.' : 'Computed.',
+                direction: 'Risk → Odds',
+                p,
+                odds,
+                warnings: warn.join(' | ')
+              };
+            } else {
+              const odds = row.vals.odds;
+              if (!(odds >= 0)) throw new Error('Odds must be ≥ 0.');
+              const p = oddsToRisk(odds);
+              // keep strict range check for output risk
+              if (!(p > 0 && p < 1)) {
+                warn.push('Converted risk is not strictly between 0 and 1.');
+              }
+              return {
+                status: warn.length ? 'warn' : 'ok',
+                message: warn.length ? 'Computed with warnings.' : 'Computed.',
+                direction: 'Odds → Risk',
+                odds,
+                p,
+                warnings: warn.join(' | ')
+              };
+            }
+          }
+
+          // MODE.P1P0_TO_BOTH
+          const p1 = row.vals.p1;
+          const p0 = row.vals.p0;
+          if (!(p0 > 0 && p0 < 1)) throw new Error('Baseline risk p0 must satisfy 0 < p0 < 1.');
+          if (!(p1 > 0 && p1 < 1)) throw new Error('Risk in exposed p1 must satisfy 0 < p1 < 1.');
+
+          const rr = p1 / p0;
+          if (!(rr > 0) || !Number.isFinite(rr)) throw new Error('Cannot compute RR (check inputs).');
+
+          const odds0 = riskToOdds(p0);
+          const odds1 = riskToOdds(p1);
+          const OR = odds1 / odds0;
+          if (!(OR > 0) || !Number.isFinite(OR)) throw new Error('Cannot compute OR (check inputs).');
+
+          return {
+            status: warn.length ? 'warn' : 'ok',
+            message: warn.length ? 'Computed with warnings.' : 'Computed.',
+            p0, p1, rr, or: OR, odds0, odds1,
+            warnings: warn.join(' | ')
+          };
+        } catch (e) {
+          return {
+            status: 'err',
+            message: String(e?.message || e),
+            warnings: '',
+            ...echoInputs(row)
+          };
+        }
+      }
+
+      function echoInputs(row) {
+        const out = {};
+        for (const k of visibleManualKeys) out[k] = safeEcho(k, row.idx);
+        return out;
+      }
+
+      function safeEcho(key, idx) {
+        const parsed = parseList(inputs[key]);
+        const t = parsed[idx];
+        if (!t) return null;
+        if (t.ok) return t.val;
+        if (t.missing) return null;
+        return NaN;
+      }
+
+      const tableCols = useMemo(() => {
+        if (mode === MODE.RR_P0_TO_OR) {
+          return [
+            { key: 'status', label: 'Status' },
+            { key: 'message', label: 'Message' },
+            { key: 'rr', label: 'RR' },
+            { key: 'p0', label: 'Baseline risk (p0)' },
+            { key: 'p1', label: 'Treated risk (p1)' },
+            { key: 'odds0', label: 'Baseline odds' },
+            { key: 'odds1', label: 'Treated odds' },
+            { key: 'or', label: 'OR' },
+            { key: 'warnings', label: 'Warnings' }
+          ];
+        }
+        if (mode === MODE.OR_P0_TO_RR) {
+          return [
+            { key: 'status', label: 'Status' },
+            { key: 'message', label: 'Message' },
+            { key: 'or', label: 'OR' },
+            { key: 'p0', label: 'Baseline risk (p0)' },
+            { key: 'p1', label: 'Treated risk (p1)' },
+            { key: 'odds0', label: 'Baseline odds' },
+            { key: 'odds1', label: 'Treated odds' },
+            { key: 'rr', label: 'RR' },
+            { key: 'warnings', label: 'Warnings' }
+          ];
+        }
+        if (mode === MODE.RISK_ODDS) {
+          return [
+            { key: 'status', label: 'Status' },
+            { key: 'message', label: 'Message' },
+            { key: 'direction', label: 'Direction' },
+            { key: 'p', label: 'Risk (p)' },
+            { key: 'odds', label: 'Odds' },
+            { key: 'warnings', label: 'Warnings' }
+          ];
+        }
+        return [
+          { key: 'status', label: 'Status' },
+          { key: 'message', label: 'Message' },
+          { key: 'p0', label: 'Baseline risk (p0)' },
+          { key: 'p1', label: 'Exposed risk (p1)' },
+          { key: 'rr', label: 'RR' },
+          { key: 'or', label: 'OR' },
+          { key: 'odds0', label: 'Baseline odds' },
+          { key: 'odds1', label: 'Exposed odds' },
+          { key: 'warnings', label: 'Warnings' }
+        ];
+      }, [mode]);
+
+      function buildCsv(computedRows) {
+        const metaCols = ['mode'];
+        const inputCols = ['rr', 'or', 'p0', 'p1', 'p', 'odds'];
+        const outCols = ['status', 'message', 'direction', 'rr_out', 'or_out', 'p0_out', 'p1_out', 'risk_out', 'odds_out', 'baseline_odds', 'treated_odds', 'warnings'];
+        const header = [...metaCols, ...inputCols, ...outCols];
+
+        const modeLabel = (
+          mode === MODE.RR_P0_TO_OR ? 'RR + Baseline Risk → OR' :
+          mode === MODE.OR_P0_TO_RR ? 'OR + Baseline Risk → RR' :
+          mode === MODE.RISK_ODDS ? 'Risk ↔ Odds (helper)' :
+          'Group Risks (p1, p0) → RR & OR'
+        );
+
+        const lines = [header.join(',')];
+
+        for (const r of computedRows) {
+          const rowVals = {
+            mode: modeLabel,
+            rr: r.rr ?? '',
+            or: r.or ?? '',
+            p0: r.p0 ?? '',
+            p1: r.p1 ?? '',
+            p: r.p ?? '',
+            odds: r.odds ?? '',
+            status: r.status ?? '',
+            message: r.message ?? '',
+            direction: r.direction ?? '',
+            rr_out: r.rr ?? '',
+            or_out: r.or ?? '',
+            p0_out: r.p0 ?? '',
+            p1_out: r.p1 ?? '',
+            risk_out: r.p ?? '',
+            odds_out: r.odds ?? '',
+            baseline_odds: r.odds0 ?? '',
+            treated_odds: r.odds1 ?? '',
+            warnings: r.warnings ?? ''
+          };
+
+          const line = header.map((k) => csvEscape(valOrBound(rowVals[k])));
+          lines.push(line.join(','));
+        }
+
+        return lines.join('\n');
+      }
+
+      function valOrBound(x) {
+        if (x === Infinity) return 'Infinity';
+        if (x === -Infinity) return '-Infinity';
+        if (x === null || x === undefined) return '';
+        if (typeof x === 'number') {
+          if (!Number.isFinite(x)) return '';
+          return x;
+        }
+        return x;
+      }
+
+      function run() {
+        setResults([]);
+        setLengthNote('');
+        setCsvText('');
+
+        const aligned = alignRows();
+        const { rows, minLen, maxLen, extras } = aligned;
+
+        if (minLen === 0) {
+          setResults([]);
+          setLengthNote('No rows to process. Enter comma-separated values in the required input fields.');
+          return;
+        }
+
+        if (maxLen !== minLen) {
+          const extraMsg = extras.map(e => `${inputMeta[e.key].label}: ${e.extra} extra value(s) ignored`).join(' · ');
+          setLengthNote(`Length mismatch: processed up to the shortest list (${minLen}). ${extraMsg}`);
+        }
+
+        const computed = rows.map(computeRow);
+        setResults(computed);
+        setCsvText(buildCsv(computed));
+      }
+
+      async function copyCsv() {
+        try { await navigator.clipboard.writeText(csvText || ''); }
+        catch { alert('Clipboard copy failed in this browser. You can still use Download CSV.'); }
+      }
+
+      function downloadCsv() {
+        const blob = new Blob([csvText || ''], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'entropy_rr_or_conversion_results.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function resetAll() {
+        setMode(MODE.RR_P0_TO_OR);
+        setRiskToOddsDir(true);
+        setInputs({ rr: '', or: '', p0: '', p1: '', p: '', odds: '' });
+        setResults([]);
+        setCsvText('');
+        setLengthNote('');
+
+        setParsedFile(null);
+        setFileStatus('No file loaded.');
+        setColModalOpen(false);
+        setColSelections({});
+        setHasHeader(true);
+      }
+
+      // -----------------------------
+      // File upload + column picker
+      // -----------------------------
+
+      async function ensureXLSX() {
+        if (window.XLSX) return;
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+          s.onload = () => resolve();
+          s.onerror = () => reject(new Error('Failed to load XLSX parser. Please retry.'));
+          document.head.appendChild(s);
+        });
+      }
+
+      async function handleFile(file) {
+        const name = file?.name || 'file';
+        const ext = name.toLowerCase().split('.').pop();
+        setFileStatus(`Loaded: ${name}`);
+
+        try {
+          let rows;
+          if (ext === 'csv' || ext === 'txt') {
+            const text = await file.text();
+            const firstLine = text.split(/\r?\n/)[0] ?? '';
+            const delim = detectDelimiter(firstLine);
+            rows = parseCSV(text, delim);
+          } else if (ext === 'xlsx') {
+            await ensureXLSX();
+            const buf = await file.arrayBuffer();
+            const wb = window.XLSX.read(buf, { type: 'array' });
+            const sheetName = wb.SheetNames[0];
+            const ws = wb.Sheets[sheetName];
+            rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+          } else {
+            throw new Error('Unsupported file type. Please upload .csv, .txt, or .xlsx.');
+          }
+
+          if (!rows || rows.length < 1) throw new Error('File appears empty.');
+
+          const headerGuess = looksLikeHeader(rows[0]);
+          setParsedFile({ rows, filename: name, headerGuess });
+          setHasHeader(headerGuess);
+
+          const maxCols = Math.max(...rows.map(r => r.length));
+          const initial = {};
+          visibleManualKeys.forEach((k, idx) => { initial[k] = Math.min(idx, Math.max(0, maxCols - 1)); });
+          setColSelections(initial);
+          setColModalOpen(true);
+        } catch (e) {
+          setParsedFile(null);
+          setFileStatus('No file loaded.');
+          alert(String(e?.message || e));
+        }
+      }
+
+      function colName(rows, idx, headerOn) {
+        const maxCols = Math.max(...rows.map(r => r.length));
+        const defaultNames = Array.from({ length: maxCols }, (_, i) => `Column ${String.fromCharCode(65 + i)}`);
+        if (!headerOn) return defaultNames[idx] || `Column ${idx + 1}`;
+        const h = String(rows?.[0]?.[idx] ?? '').trim();
+        return h ? h : (defaultNames[idx] || `Column ${idx + 1}`);
+      }
+
+      function applyColumns() {
+        if (!parsedFile) return;
+        const { rows } = parsedFile;
+        const start = hasHeader ? 1 : 0;
+
+        const keysToFill = visibleManualKeys;
+        const out = { ...inputs };
+        const cols = {};
+        keysToFill.forEach(k => cols[k] = []);
+
+        for (let i = start; i < rows.length; i++) {
+          const r = rows[i] || [];
+          keysToFill.forEach((k) => {
+            const idx = Number(colSelections[k]);
+            const v = (r[idx] ?? '');
+            cols[k].push(String(v).trim());
+          });
+        }
+
+        keysToFill.forEach(k => { out[k] = cols[k].join(', '); });
+        setInputs(out);
+        setColModalOpen(false);
+        setResults([]);
+        setCsvText('');
+        setLengthNote('');
+      }
+
+      // -----------------------------
+      // Render
+      // -----------------------------
+
+      const modeOptions = useMemo(() => ([
+        { value: MODE.RR_P0_TO_OR, label: 'RR + Baseline Risk → OR' },
+        { value: MODE.OR_P0_TO_RR, label: 'OR + Baseline Risk → RR' },
+        { value: MODE.RISK_ODDS, label: 'Risk ↔ Odds (helper)' },
+        { value: MODE.P1P0_TO_BOTH, label: 'Group Risks (p1, p0) → RR & OR' }
+      ]), []);
+
+      const requiredManualKeys = visibleManualKeys;
+
+      const statusColor = fieldSummary.kind === 'err'
+        ? 'text-red-700'
+        : fieldSummary.kind === 'warn'
+          ? 'text-amber-700'
+          : 'text-emerald-700';
+
+      const canCopy = results.length > 0 && (csvText || '').length > 0;
+
+      const baselineInfoText = (
+        'RR ↔ OR conversion is not uniquely defined without a baseline risk.\n\n'
+        + '• Baseline risk (p0) is the risk in the control/unexposed group.\n'
+        + '• Providing p0 (or both p1 and p0) lets the tool translate between RR and OR in a way that stays consistent with the same outcome and time window.'
+      );
+
+      const hrorInfoText = `This infographic uses a standard 2x2 table to illustrate four key ways researchers measure the relationship between an exposure (like a treatment) and an outcome. On the left, it defines Risk as the direct probability of the event happening in a group (a simple percentage), while Odds is defined as the ratio of events occurring versus them not occurring (like betting odds). The right side compares the two groups: Relative Risk (RR) is the most intuitive measure, directly comparing the probabilities to tell you, for instance, that the treated group is \"twice as likely\" to experience the event. The Odds Ratio (OR) compares the betting odds instead; it is mathematically useful for specific study designs (like case-control studies) but is generally less intuitive for beginners than the direct probability comparison provided by RR.`;
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* Header */}
+          <header className="sticky top-0 z-40 bg-[rgba(240,253,250,0.75)] backdrop-blur border-b border-slate-200">
+            <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-[220px]">
+                {logoOk ? (
+                  <img
+                    src="Entropy.png"
+                    alt="Entropy"
+                    className="h-9 w-auto"
+                    onError={() => setLogoOk(false)}
+                  />
+                ) : (
+                  <div className="logo-fallback" aria-hidden="true">
+                    <span style={{ fontSize: 30, fontWeight: 400 }}>Σntr</span>
+                    <span style={{ fontSize: 22.5, fontWeight: 700 }}>Ω</span>
+                    <span style={{ fontSize: 30, fontWeight: 400 }}>.py</span>
+                  </div>
+                )}
+              </div>
+              <a className="btn-secondary text-sm" href="Convert Statistical Quantities.html" title="Return to the tools list">
+                <span aria-hidden="true">←</span>
+                <span>Back to Tools</span>
+              </a>
+            </div>
+          </header>
+
+          {/* Main */}
+          <main className="flex-1">
+            <div className="max-w-6xl mx-auto px-4 py-8">
+              <section className="animate-fade-up" style={{ animationDelay: '0.05s' }}>
+                <h1 className="text-3xl font-bold text-[#184B44] mb-3 text-center">Risk and odds conversion</h1>
+                <p className="text-sm text-slate-600 leading-relaxed text-center">
+                  Convert between relative risk and odds ratio by anchoring the calculation to a baseline risk; also includes a risk↔odds helper and an optional mode that computes both measures from group risks.
+                </p>
+              </section>
+
+              {/* Assumptions */}
+              <section className="animate-fade-up mt-5" style={{ animationDelay: '0.10s' }}>
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-lg font-semibold text-slate-800">Assumptions</div>
+                      <div className="text-sm text-slate-600 leading-relaxed">Mode-aware notes are appended below the core assumptions.</div>
+                    </div>
+                    <div className="text-xs text-slate-600 bg-white border border-amber-200 rounded-full px-3 py-1">
+                      {mode === MODE.RR_P0_TO_OR ? 'RR→OR' : mode === MODE.OR_P0_TO_RR ? 'OR→RR' : mode === MODE.RISK_ODDS ? 'Risk↔Odds' : 'p1,p0→RR&OR'}
+                    </div>
+                  </div>
+                  <ul className="mt-3 list-disc pl-5 text-sm text-slate-700 leading-relaxed">
+                    {assumptions.map((a, i) => (<li key={i} className="mt-2">{a}</li>))}
+                  </ul>
+                </div>
+              </section>
+
+              {/* Calculator */}
+              <section className="animate-fade-up mt-6" style={{ animationDelay: '0.15s' }}>
+                <div className="tool-card">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="text-lg font-semibold text-slate-800">Mode</div>
+                      <InfoIconButton
+                        label="What are risk, odds, RR, and OR?"
+                        onClick={() => setInfoModal({ open: true, type: 'hror' })}
+                      />
+                    </div>
+                    <Tabs
+                      value={mode}
+                      onChange={(v) => { setMode(v); setResults([]); setCsvText(''); setLengthNote(''); }}
+                      options={modeOptions}
+                    />
+                  </div>
+
+                  {/* Mode 3 helper direction */}
+                  {mode === MODE.RISK_ODDS ? (
+                    <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="text-lg font-semibold text-slate-800">Helper direction</div>
+                      <div className="mt-3">
+                        <Toggle
+                          checked={!riskToOddsDir}
+                          onChange={(v) => { setRiskToOddsDir(!v); setResults([]); setCsvText(''); setLengthNote(''); }}
+                          leftLabel="Risk → Odds"
+                          rightLabel="Odds → Risk"
+                          helper="Choose which value you want to convert."
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Split layout: inputs + output */}
+                  <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Inputs */}
+                    <div className="min-w-0 lg:col-span-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-lg font-semibold text-slate-800">Inputs</div>
+                          <div className="text-sm text-slate-600">Manual entry (comma-separated) or file upload.</div>
+                        </div>
+                        <div className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-3 py-1">Strict typing · per-row validation</div>
+                      </div>
+
+                      <div className="mt-4 space-y-4">
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+                          <div className="text-sm font-medium text-slate-800">Required inputs</div>
+                          <div className="mt-3 grid grid-cols-1 gap-4">
+                            {requiredManualKeys.map((k) => (
+                              <InputBar
+                                key={k}
+                                id={`in-${k}`}
+                                label={inputMeta[k].label}
+                                helper={inputMeta[k].helper}
+                                value={inputs[k]}
+                                onChange={(v) => updateInput(k, v)}
+                                placeholder={inputMeta[k].placeholder}
+                                rightAdornment={(k === 'p0' && mode !== MODE.RISK_ODDS) ? (
+                                  <InfoIconButton
+                                    label="Why baseline risk is required"
+                                    onClick={() => setInfoModal({ open: true, type: 'p0' })}
+                                  />
+                                ) : null}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={"mt-4 text-sm leading-relaxed " + statusColor}>
+                        <span className="font-medium">{fieldSummary.kind === 'ok' ? 'Ready:' : 'Input issues:'}</span>
+                        <span className="ml-2 text-slate-700">{fieldSummary.text}</span>
+                      </div>
+
+                      {/* Upload */}
+                      <details className="mt-5 rounded-2xl border border-slate-200 bg-white/70 p-4">
+                        <summary className="cursor-pointer text-sm font-medium text-slate-800">
+                          File upload (optional)
+                          <span className="ml-2 text-xs font-normal text-slate-500">{fileStatus}</span>
+                        </summary>
+
+                        <div
+                          className={
+                            "mt-3 rounded-2xl border-2 border-dashed p-4 transition " +
+                            (dropActive ? "border-[var(--brand-primary)] bg-[rgba(230,255,250,0.6)]" : "border-slate-300 bg-white/70")
+                          }
+                          onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDropActive(true); }}
+                          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropActive(true); }}
+                          onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDropActive(false); }}
+                          onDrop={(e) => {
+                            e.preventDefault(); e.stopPropagation();
+                            setDropActive(false);
+                            const f = e.dataTransfer?.files?.[0];
+                            if (f) handleFile(f);
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Upload a CSV, TXT, or XLSX file"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <div className="text-sm font-medium text-slate-800">Drag & drop a .csv, .txt, or .xlsx file</div>
+                              <div className="text-xs text-slate-500 mt-1 font-normal">Upload → parse → choose columns → populate inputs.</div>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn-secondary text-sm"
+                              onClick={() => fileInputRef.current?.click()}
+                            >
+                              Browse files
+                            </button>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept=".csv,.txt,.xlsx"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleFile(f);
+                                e.target.value = '';
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </details>
+
+                      <div className="mt-5 flex flex-wrap gap-3">
+                        <button type="button" className="btn-brand text-sm" onClick={run}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M5 12h14" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                            <path d="M13 5l7 7-7 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          Run
+                        </button>
+                        <button type="button" className="btn-danger text-sm" onClick={resetAll}>Reset</button>
+                      </div>
+
+                      {lengthNote ? (
+                        <div className="mt-3 text-sm text-amber-700 leading-relaxed">
+                          <span className="font-medium">Note:</span> {lengthNote}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Output */}
+                    <div className="min-w-0 lg:col-span-7">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-lg font-semibold text-slate-800">Output</div>
+                          <div className="text-sm text-slate-600">Per-row results with warnings (non-blocking).</div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 justify-end">
+                          <button type="button" className="btn-secondary text-sm" onClick={copyCsv} disabled={!canCopy}>Copy to Clipboard</button>
+                          <button type="button" className="btn-secondary text-sm" onClick={downloadCsv} disabled={!canCopy}>Download CSV</button>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-3 py-1">
+                          {results.length} row{results.length === 1 ? '' : 's'}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 border border-slate-200 rounded-2xl bg-white overflow-auto" style={{ maxHeight: 460 }}>
+                        <table className="min-w-[980px] w-full border-collapse">
+                          <thead className="sticky top-0 bg-slate-50">
+                            <tr>
+                              {tableCols.map((c) => (
+                                <th key={c.key} className="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-3 py-2 border-b border-slate-200">
+                                  {c.label}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {results.length === 0 ? (
+                              <tr>
+                                <td colSpan={tableCols.length} className="px-3 py-4 text-sm text-slate-500">Run the calculator to see results.</td>
+                              </tr>
+                            ) : (
+                              results.map((r, idx) => (
+                                <tr key={idx} className={(idx % 2 === 0 ? "bg-white" : "bg-slate-50/40") + " hover:bg-[rgba(240,253,250,0.75)]"}>
+                                  {tableCols.map((c) => {
+                                    if (c.key === 'status') {
+                                      return (
+                                        <td key={c.key} className="px-3 py-2 border-b border-slate-100">
+                                          <div className="flex items-center gap-2">
+                                            <StatusIcon status={r.status} />
+                                            <span className="text-xs text-slate-600 font-medium">{String(r.status || '').toUpperCase()}</span>
+                                          </div>
+                                        </td>
+                                      );
+                                    }
+                                    if (c.key === 'message') {
+                                      const cls = r.status === 'err' ? 'text-red-700' : (r.status === 'warn' ? 'text-amber-700' : 'text-emerald-700');
+                                      return (
+                                        <td key={c.key} className={"px-3 py-2 border-b border-slate-100 text-sm " + cls}>
+                                          {r.message}
+                                        </td>
+                                      );
+                                    }
+
+                                    const v = r[c.key];
+                                    const display = (c.key === 'warnings' || c.key === 'direction') ? String(v ?? '') : fmt(v);
+                                    return (
+                                      <td key={c.key} className="px-3 py-2 border-b border-slate-100 text-sm text-slate-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                        {display}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="mt-3 text-sm text-slate-600 leading-relaxed">
+                        Exported CSV includes inputs, computed outputs, and warning flags.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* References */}
+              <section className="animate-fade-up mt-8" style={{ animationDelay: '0.20s' }}>
+                <div className=".tool-card-2">
+                  <div className="text-lg font-semibold text-slate-800">References</div>
+                  <ul className="mt-3 list-disc pl-5 text-sm text-slate-700 leading-relaxed">
+                    <li>Zhang, J., &amp; Yu, K. F. (1998). What’s the relative risk? A method of correcting the odds ratio in cohort studies of common outcomes. <span className="italic">JAMA, 280</span>(19), 1690–1691.</li>
+                    <li>Cummings, P. (2009). The relative merits of risk ratios and odds ratios. <span className="italic">JAMA Pediatrics, 163</span>(5), 438–445.</li>
+                    <li>Montreuil, B. (2005). What is so odd about odds? <span className="italic">Journal of the Canadian Chiropractic Association, 49</span>(1), 51–54.</li>
+                    <li>Prasad, K., Jaeschke, R., Wyer, P., Keitz, S., &amp; Guyatt, G. (2008). Understanding odds ratios and their relationship to risk ratios. <span className="italic">Journal of General Internal Medicine, 23</span>(5), 635–640.</li>
+                    <li>Kim, H. Y. (2017). Risk difference, risk ratio, and odds ratio. <span className="italic">Korean Journal of Anesthesiology, 70</span>(4), 378–380.</li>
+                  </ul>
+                </div>
+              </section>
+            </div>
+          </main>
+
+          {/* Footer */}
+          <footer className="border-t border-slate-200 bg-[rgba(240,253,250,0.65)] bg-white">
+            <div className="max-w-6xl mx-auto px-4 py-6 text-center">
+              <div className="text-sm text-slate-600">© {new Date().getFullYear()} Entropy. All rights reserved.</div>
+            </div>
+          </footer>
+
+          {/* Column mapping modal */}
+          <Modal
+            open={colModalOpen}
+            title={parsedFile?.filename ? `Select columns — ${parsedFile.filename}` : 'Select columns'}
+            onClose={() => setColModalOpen(false)}
+          >
+            {parsedFile ? (
+              <div>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Map file columns to the required input fields for the current mode. After applying, the inputs will be populated as comma-separated lists.
+                </p>
+
+                <div className="mt-4">
+                  <Toggle
+                    checked={!hasHeader}
+                    onChange={(v) => setHasHeader(!v)}
+                    leftLabel="Headers present"
+                    rightLabel="No headers"
+                    helper="If headers are present, the first row is treated as column names and will not be imported as data."
+                  />
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {visibleManualKeys.map((k) => {
+                    const maxCols = Math.max(1, ...((parsedFile.rows || []).map(r => (r ? r.length : 0))));
+                    return (
+                      <div key={k} className="w-full">
+                        <label className="block text-sm font-medium text-slate-800">{inputMeta[k].label}</label>
+                        <select
+                          value={colSelections[k] ?? 0}
+                          onChange={(e) => setColSelections((prev) => ({ ...prev, [k]: Number(e.target.value) }))}
+                          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-[rgba(24,75,68,0.15)] focus:border-[var(--brand-primary)]"
+                        >
+                          {Array.from({ length: maxCols }, (_, i) => (
+                            <option key={i} value={i}>{colName(parsedFile.rows, i, hasHeader)}</option>
+                          ))}
+                        </select>
+                        <div className="text-xs text-slate-500 mt-1 font-normal">
+                          Choose the column that should populate this input.
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-5">
+                  <div className="text-sm font-medium text-slate-800">Preview</div>
+                  <div className="text-xs text-slate-500 mt-1 font-normal">Showing the first few rows that will be imported.</div>
+
+                  <div className="mt-3 border border-slate-200 rounded-2xl overflow-auto bg-white" style={{ maxHeight: 220 }}>
+                    <table className="min-w-full border-collapse">
+                      <thead className="sticky top-0 bg-slate-50">
+                        <tr>
+                          {Array.from({ length: Math.min(6, Math.max(1, ...parsedFile.rows.map(r => (r ? r.length : 0)))) }, (_, i) => (
+                            <th key={i} className="text-left text-xs font-semibold text-slate-600 uppercase tracking-wider px-3 py-2 border-b border-slate-200">
+                              {colName(parsedFile.rows, i, hasHeader)}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parsedFile.rows
+                          .slice(hasHeader ? 1 : 0, (hasHeader ? 1 : 0) + 5)
+                          .map((r, ri) => (
+                            <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}>
+                              {Array.from({ length: Math.min(6, Math.max(1, ...parsedFile.rows.map(r0 => (r0 ? r0.length : 0)))) }, (_, ci) => (
+                                <td key={ci} className="px-3 py-2 border-b border-slate-100 text-sm text-slate-700">
+                                  {String((r?.[ci] ?? '')).trim()}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-3 justify-end">
+                  <button type="button" className="btn-secondary text-sm" onClick={() => setColModalOpen(false)}>Cancel</button>
+                  <button type="button" className="btn-brand text-sm" onClick={applyColumns}>Apply columns</button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">No parsed file found.</p>
+            )}
+          </Modal>
+
+          {/* Info modal */}
+          <Modal
+            open={infoModal.open}
+            title={infoModal.type === 'hror' ? 'Risk, odds, relative risk, and odds ratio' : 'Baseline risk (p0)'}
+            onClose={() => setInfoModal({ open: false, type: 'p0' })}
+          >
+            {infoModal.type === 'hror' ? (
+              <div>
+                <div
+                  className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                  style={{ aspectRatio: '11 / 6' }}
+                >
+                  <img
+                    src="HR_OR.png"
+                    alt="Risk, odds, relative risk, and odds ratio infographic"
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+                <p className="mt-3 text-sm text-slate-700 leading-relaxed">{hrorInfoText}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{baselineInfoText}</p>
+            )}
+          </Modal>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
+ 
