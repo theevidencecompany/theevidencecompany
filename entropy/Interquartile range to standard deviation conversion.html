@@ -1,0 +1,1413 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interquartile range to standard deviation conversion</title>
+
+  <!-- Inter (300–700) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind (utilities for layout/spacing) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React (UMD) + Babel for JSX -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- SheetJS (for .xlsx) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    /* THEME (EXACT VALUES) */
+    :root{
+      --brand-primary: #184B44;
+      --brand-light:   #2a6e64;
+      --brand-accent:  #e6fffa;
+    }
+
+    html, body { height: 100%; }
+
+    body{
+      font-family: 'Inter', sans-serif;
+      color: #334155;
+      font-size: 16px;
+      line-height: 24px;
+      background-color: #f0fdfa;
+      background-image: radial-gradient(#ccfbf1 1px, transparent 1px);
+      background-size: 20px 20px;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    /* Explicit type scale */
+    .text-xs{ font-size:12px; line-height:16px; font-weight:400; }
+    .text-sm{ font-size:14px; line-height:20px; }
+    .text-base{ font-size:16px; line-height:24px; font-weight:400; }
+    .text-xl{ font-size:20px; line-height:28px; font-weight:700; }
+    .text-3xl{ font-size:30px; line-height:36px; font-weight:700; }
+
+    a{ color: var(--brand-primary); text-decoration:none; }
+    a:hover{ text-decoration: underline; }
+
+    /* Animations */
+    @keyframes fadeIn { from { opacity:0; transform: translateY(20px);} to {opacity:1; transform: translateY(0);} }
+    .animate-fade-up { animation: fadeIn 0.6s cubic-bezier(0.4,0,0.2,1) forwards; opacity:0; }
+
+    /* Cards */
+    .tool-card{
+      background:#fff;
+      border:1px solid rgba(24,75,68,0.1);
+      border-radius:1rem;
+      padding:2rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+    }
+
+    /* Buttons */
+    .btn-brand{
+      background-color: var(--brand-primary);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-brand:hover{
+      background-color: var(--brand-light);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(24,75,68,0.2);
+    }
+
+    .btn-secondary{
+      background-color: white;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-secondary:hover{
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background-color: #f8fafc;
+    }
+
+    .btn-danger{
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-danger:hover{
+      background-color: #fecaca;
+      border-color: #f87171;
+    }
+
+    /* Toggle Switch */
+    .toggle-checkbox:checked { right: 0; border-color: #184B44; }
+    .toggle-checkbox:checked + .toggle-label { background-color: #184B44; }
+
+    /* Modal Overlay */
+    .modal-overlay{ background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+
+    /* Comma-separated numeric inputs */
+    .list-input{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:14px;
+      line-height:20px;
+      font-weight:400;
+    }
+
+    /* Header chrome */
+    header{
+      position:sticky;
+      top:0;
+      z-index:40;
+      background: rgba(240,253,250,0.85);
+      border-bottom:1px solid rgba(226,232,240,0.9);
+      backdrop-filter: saturate(150%) blur(10px);
+    }
+
+    /* Logo fallback rule */
+    .logo-fallback{ font-family: Gungsuh, serif; color: var(--brand-primary); letter-spacing:.2px; }
+    .logo-fallback .main{ font-size:30px; font-weight:400; }
+    .logo-fallback .omega{ font-size:22.5px; font-weight:700; }
+
+    /* References block (site-consistent, not a raised card) */
+    .references-plain{
+      background-color: #f0fdfa;
+      box-shadow: none;
+      border: none;
+      border-top: 1px solid rgba(24, 75, 68, 0.18);
+    }
+
+    /* Table */
+    .table-wrap{ border:1px solid #e2e8f0; border-radius:1rem; overflow:auto; max-height: 460px; background:#fff; }
+    table{ border-collapse:separate; border-spacing:0; min-width: 980px; width:100%; }
+    th, td{ padding: 10px 12px; border-bottom:1px solid #e2e8f0; vertical-align:middle; }
+    th{ position:sticky; top:0; background:#f8fafc; z-index:1; font-size:12px; line-height:16px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:#64748b; }
+    td{ font-size:14px; line-height:20px; }
+    tr:hover td{ background: rgba(240,253,250,.65); }
+
+    /* Modal image holder */
+    .modal-img{ width:100%; aspect-ratio: 11 / 6; border-radius:1rem; border:1px solid #e2e8f0; overflow:hidden; background: linear-gradient(135deg, rgba(24,75,68,.08), rgba(42,110,100,.08)); display:grid; place-items:center; }
+    .modal-img img{ width:100%; height:100%; object-fit:contain; display:block; }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useEffect, useMemo, useRef, useState } = React;
+
+    // -----------------------------
+    // Internal-only math utilities
+    // -----------------------------
+
+    // Acklam inverse normal CDF approximation
+    function inverseNormalCDF(p) {
+      if (!(p > 0 && p < 1)) return NaN;
+      const a = [-3.969683028665376e+01,  2.209460984245205e+02, -2.759285104469687e+02,  1.383577518672690e+02, -3.066479806614716e+01,  2.506628277459239e+00];
+      const b = [-5.447609879822406e+01,  1.615858368580409e+02, -1.556989798598866e+02,  6.680131188771972e+01, -1.328068155288572e+01];
+      const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00,  4.374664141464968e+00,  2.938163982698783e+00];
+      const d = [ 7.784695709041462e-03,  3.224671290700398e-01,  2.445134137142996e+00,  3.754408661907416e+00];
+      const plow = 0.02425;
+      const phigh = 1 - plow;
+      let q, r;
+      if (p < plow) {
+        q = Math.sqrt(-2 * Math.log(p));
+        return (((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
+               ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1);
+      }
+      if (p > phigh) {
+        q = Math.sqrt(-2 * Math.log(1 - p));
+        return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
+                ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1);
+      }
+      q = p - 0.5;
+      r = q*q;
+      return (((((a[0]*r + a[1])*r + a[2])*r + a[3])*r + a[4])*r + a[5]) * q /
+             (((((b[0]*r + b[1])*r + b[2])*r + b[3])*r + b[4])*r + 1);
+    }
+
+    function clamp(n, min, max) {
+      return Math.min(max, Math.max(min, n));
+    }
+
+    function splitList(raw) {
+      const s = String(raw ?? '');
+      if (s.trim() === '') return [];
+      const parts = s.split(',').map(t => t.trim());
+      while (parts.length && parts[parts.length - 1] === '') parts.pop();
+      return parts;
+    }
+
+    function parseNumberToken(token) {
+      const t = String(token ?? '').trim();
+      if (t === '') return { raw: '', ok: false, missing: true, val: NaN };
+      const n = Number(t);
+      if (Number.isFinite(n)) return { raw: t, ok: true, missing: false, val: n };
+      return { raw: t, ok: false, missing: false, val: NaN };
+    }
+
+    function parseIntToken(token) {
+      const t = String(token ?? '').trim();
+      if (t === '') return { raw: '', ok: false, missing: true, val: NaN };
+      const n = Number(t);
+      if (Number.isInteger(n) && Number.isFinite(n)) return { raw: t, ok: true, missing: false, val: n };
+      return { raw: t, ok: false, missing: false, val: NaN };
+    }
+
+    function detectDelimiter(line) {
+      const c = (line.match(/,/g) || []).length;
+      const t = (line.match(/\t/g) || []).length;
+      const s = (line.match(/;/g) || []).length;
+      const m = Math.max(c, t, s);
+      if (m === t) return '\t';
+      if (m === s) return ';';
+      return ',';
+    }
+
+    function parseCSV(text, delim) {
+      const rows = [];
+      let row = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        const next = text[i + 1];
+        if (ch === '"') {
+          if (inQuotes && next === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (!inQuotes && ch === delim) {
+          row.push(cur);
+          cur = '';
+        } else if (!inQuotes && (ch === '\n' || ch === '\r')) {
+          if (ch === '\r' && next === '\n') i++;
+          row.push(cur);
+          rows.push(row);
+          row = [];
+          cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+      if (cur.length || row.length) {
+        row.push(cur);
+        rows.push(row);
+      }
+      while (rows.length && rows[rows.length - 1].every(x => String(x ?? '').trim() === '')) rows.pop();
+      return rows;
+    }
+
+    function looksLikeHeader(firstRow) {
+      if (!firstRow || !firstRow.length) return false;
+      let nonNumeric = 0;
+      let numeric = 0;
+      for (const cell of firstRow) {
+        const t = String(cell ?? '').trim();
+        if (!t) continue;
+        const n = Number(t);
+        if (Number.isFinite(n)) numeric++; else nonNumeric++;
+      }
+      return nonNumeric > 0 && nonNumeric >= numeric;
+    }
+
+    function csvEscape(x) {
+      const s = String(x ?? '');
+      if (/[\n\r,\"]/g.test(s)) return '"' + s.replace(/\"/g, '""') + '"';
+      return s;
+    }
+
+    // Normal-theory constant cached (do not show formulas; number is shown only in Advanced panel)
+    const NORMAL_CONST = 2 * inverseNormalCDF(0.75); // ~1.3489795
+
+    // -----------------------------
+    // UI pieces
+    // -----------------------------
+
+    function InfoIconButton({ onClick, label }) {
+      return (
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-slate-200 bg-white hover:border-[var(--brand-primary)] hover:shadow-sm transition"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 17v-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M12 7h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        </button>
+      );
+    }
+
+    function StatusIcon({ status }) {
+      if (status === 'ok') {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5" stroke="#166534" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+      }
+      if (status === 'warn') {
+        return (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 9v4" stroke="#b45309" strokeWidth="2.4" strokeLinecap="round" />
+            <path d="M12 17h.01" stroke="#b45309" strokeWidth="3" strokeLinecap="round" />
+            <path d="M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z" stroke="#b45309" strokeWidth="2" />
+          </svg>
+        );
+      }
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 8v5" stroke="#b91c1c" strokeWidth="2.4" strokeLinecap="round" />
+          <path d="M12 16h.01" stroke="#b91c1c" strokeWidth="3" strokeLinecap="round" />
+          <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="#b91c1c" strokeWidth="2" />
+        </svg>
+      );
+    }
+
+    function Modal({ open, title, children, onClose }) {
+      if (!open) return null;
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" role="dialog" aria-modal="true">
+          <div className="w-full max-w-3xl bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-200">
+              <div className="text-xl font-bold text-slate-800">{title}</div>
+              <button type="button" className="btn-secondary" onClick={onClose}>Close</button>
+            </div>
+            <div className="p-4">{children}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function InputBar({ id, label, helper, value, onChange, placeholder }) {
+      return (
+        <div className="w-full">
+          <label className="block text-sm font-medium text-slate-800" htmlFor={id} title={helper}>{label}</label>
+          <input
+            id={id}
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={
+              "list-input mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 " +
+              "text-sm focus:outline-none focus:ring-4 focus:ring-[rgba(24,75,68,0.15)] focus:border-[var(--brand-primary)]"
+            }
+            autoComplete="off"
+          />
+          <div className="text-xs text-slate-500 mt-1">{helper}</div>
+        </div>
+      );
+    }
+
+    function Badge({ kind, children }) {
+      const cls = kind === 'ok'
+        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+        : kind === 'warn'
+          ? 'bg-amber-50 text-amber-800 border-amber-200'
+          : 'bg-red-50 text-red-800 border-red-200';
+      return (
+        <span className={"inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs " + cls}>
+          {children}
+        </span>
+      );
+    }
+
+    // -----------------------------
+    // App
+    // -----------------------------
+
+    function App() {
+      const [logoOk, setLogoOk] = useState(true);
+
+      const [inputMode, setInputMode] = useState('iqr'); // 'iqr' | 'q1q3'
+      const [screenOn, setScreenOn] = useState(false);
+      const [decimals, setDecimals] = useState(4);
+
+      const [inputs, setInputs] = useState({
+        iqr: '',
+        q1: '',
+        q3: '',
+        median: '',
+        n: ''
+      });
+
+      const [fieldSummary, setFieldSummary] = useState({ kind: 'ok', text: 'Ready.' });
+      const [results, setResults] = useState([]);
+      const [lengthNote, setLengthNote] = useState('');
+      const [csvText, setCsvText] = useState('');
+
+      // File import
+      const fileInputRef = useRef(null);
+      const [dropActive, setDropActive] = useState(false);
+      const [fileStatus, setFileStatus] = useState('No file loaded.');
+      const [parsedFile, setParsedFile] = useState(null); // { rows, filename, headerGuess }
+
+      // Column picker
+      const [colModalOpen, setColModalOpen] = useState(false);
+      const [hasHeader, setHasHeader] = useState(true);
+      const [colSelections, setColSelections] = useState({});
+
+      // Infographic modal
+      const [infoOpen, setInfoOpen] = useState(false);
+
+      const meta = useMemo(() => ({
+        iqr: { label: 'IQR list', helper: 'Interquartile range values (must be ≥ 0). Comma-separated.', placeholder: 'e.g., 12, 8.5, 3.2' },
+        q1: { label: 'Q1 list', helper: 'Lower quartile values. If Q1 and Q3 are provided for a row, the tool uses them to derive the spread.', placeholder: 'e.g., 10, 4.2, 1.1' },
+        q3: { label: 'Q3 list', helper: 'Upper quartile values (should be ≥ Q1 for the same row).', placeholder: 'e.g., 22, 12.7, 4.3' },
+        median: { label: 'Median (m) list', helper: 'Only used when the optional screen is enabled.', placeholder: 'e.g., 16, 7.1, 2.4' },
+        n: { label: 'Sample size (n) list', helper: 'Only used when the optional screen is enabled (positive integers).', placeholder: 'e.g., 120, 80, 200' }
+      }), []);
+
+      function updateInput(key, value) {
+        setInputs((prev) => ({ ...prev, [key]: value }));
+      }
+
+      const parsed = useMemo(() => {
+        const iqr = splitList(inputs.iqr).map(parseNumberToken);
+        const q1 = splitList(inputs.q1).map(parseNumberToken);
+        const q3 = splitList(inputs.q3).map(parseNumberToken);
+        const median = splitList(inputs.median).map(parseNumberToken);
+        const n = splitList(inputs.n).map(parseIntToken);
+        return { iqr, q1, q3, median, n };
+      }, [inputs]);
+
+      const maxLen = useMemo(() => {
+        const lens = inputMode === 'iqr'
+          ? [parsed.iqr.length]
+          : [parsed.q1.length, parsed.q3.length];
+        if (screenOn) lens.push(parsed.median.length, parsed.n.length);
+        return Math.max(0, ...lens);
+      }, [parsed, screenOn, inputMode]);
+
+      // Validation summary (strict typing highlighted; computation remains per-row and non-blocking)
+      useEffect(() => {
+        const problems = [];
+        const warnings = [];
+
+        // Always check all visible fields for invalid tokens
+        const checkField = (k, list, extraChecks) => {
+          const bad = list.filter(t => !t.ok && !t.missing);
+          if (bad.length) {
+            problems.push(`${meta[k].label}: invalid value(s) → ${bad.slice(0,5).map(t => `'${t.raw}'`).join(', ')}${bad.length>5?'…':''}`);
+          }
+          const nums = list.filter(t => t.ok).map(t => t.val);
+          if (extraChecks) extraChecks(nums);
+        };
+
+        if (inputMode === 'iqr') {
+          checkField('iqr', parsed.iqr, (nums) => {
+            if (nums.some(n => n < 0)) problems.push(`${meta.iqr.label}: values must be ≥ 0`);
+          });
+        } else {
+          checkField('q1', parsed.q1);
+          checkField('q3', parsed.q3);
+
+          // Quick scan for Q3 < Q1 (only relevant when using quartiles)
+          const mlen = Math.min(parsed.q1.length, parsed.q3.length);
+          for (let i = 0; i < mlen; i++) {
+            if (parsed.q1[i]?.ok && parsed.q3[i]?.ok && parsed.q3[i].val < parsed.q1[i].val) {
+              warnings.push('Some rows have Q3 < Q1 and will be flagged.');
+              break;
+            }
+          }
+        }
+
+        if (screenOn) {
+          checkField('median', parsed.median);
+          const badN = parsed.n.filter(t => !t.ok && !t.missing);
+          if (badN.length) problems.push(`${meta.n.label}: invalid integer(s) → ${badN.slice(0,5).map(t => `'${t.raw}'`).join(', ')}${badN.length>5?'…':''}`);
+          const ns = parsed.n.filter(t => t.ok).map(t => t.val);
+          if (ns.some(v => v <= 0)) problems.push(`${meta.n.label}: values must be positive integers`);
+          if (ns.some(v => v < 5)) warnings.push('Some rows have n < 5; the optional screen may be unreliable there.');
+        }
+
+        if (problems.length) {
+          setFieldSummary({ kind: 'err', text: problems[0] + (problems.length > 1 ? ` (+${problems.length - 1} more)` : '') });
+        } else if (warnings.length) {
+          setFieldSummary({ kind: 'warn', text: warnings[0] + (warnings.length > 1 ? ` (+${warnings.length - 1} more)` : '') });
+        } else {
+          setFieldSummary({ kind: 'ok', text: 'Ready.' });
+        }
+      }, [parsed, screenOn, inputMode, meta]);
+
+      const assumptionsList = useMemo(() => {
+        const list = [
+          'This estimate is intended for situations where the underlying data are roughly symmetric and close to a bell-shaped distribution.',
+          'Quartiles should be computed using a conventional method consistent across groups/studies.',
+          'The result is an approximation; heavy skew or heavy tails can make the estimate misleading.'
+        ];
+        if (screenOn) {
+          list.push('The optional screen is a summary-statistics screen only; it does not prove normality.');
+        }
+        return list;
+      }, [screenOn]);
+
+      function formatNumber(x) {
+        if (x === null || x === undefined) return '';
+        if (x === Infinity) return 'Infinity';
+        if (x === -Infinity) return '-Infinity';
+        if (typeof x !== 'number' || !Number.isFinite(x)) return '';
+        const d = clamp(Number(decimals), 2, 8);
+        return x.toFixed(d);
+      }
+
+      function fmtForTable(x) {
+        if (x === null || x === undefined) return '—';
+        if (x === Infinity) return '∞';
+        if (x === -Infinity) return '−∞';
+        if (typeof x !== 'number' || !Number.isFinite(x)) return '—';
+        const d = clamp(Number(decimals), 2, 8);
+        // keep compact but deterministic
+        return x.toFixed(d);
+      }
+
+      function computeScreenBadge(q1, q3, m, n) {
+        // Returns { kind, label } or null if not applicable
+        // (No formulas displayed; internal-only)
+        if (!(Number.isFinite(q1) && Number.isFinite(q3) && Number.isFinite(m) && Number.isFinite(n))) return null;
+        if (!(n > 0) || !Number.isInteger(n)) return { kind: 'warn', label: 'Screen: invalid n' };
+        if (n < 5) return { kind: 'warn', label: 'Screen: n too small' };
+        if (!(q3 > q1)) return { kind: 'warn', label: 'Screen: Q3 must be > Q1' };
+
+        const T2 = (q1 + q3 - 2*m) / (q3 - q1);
+        const c = (2.65 / Math.sqrt(n)) - (6 / (n*n));
+        if (!Number.isFinite(T2) || !Number.isFinite(c)) return { kind: 'warn', label: 'Screen: unavailable' };
+
+        if (Math.abs(T2) > c) return { kind: 'warn', label: 'Skewness detected (screen)' };
+        return { kind: 'ok', label: 'No skewness detected (screen)' };
+      }
+
+      function run() {
+        setResults([]);
+        setLengthNote('');
+        setCsvText('');
+
+        if (maxLen === 0) {
+          setLengthNote('No rows to process. Enter comma-separated values in at least one input field.');
+          return;
+        }
+
+        // length mismatch note (non-blocking)
+        const lengths = {
+          ...(inputMode === 'iqr' ? { iqr: parsed.iqr.length } : { q1: parsed.q1.length, q3: parsed.q3.length }),
+          ...(screenOn ? { median: parsed.median.length, n: parsed.n.length } : {})
+        };
+        const nonZeroLens = Object.values(lengths).filter(x => x > 0);
+        const minNonZero = nonZeroLens.length ? Math.min(...nonZeroLens) : 0;
+        const maxAny = Math.max(...Object.values(lengths));
+        if (minNonZero > 0 && maxAny !== minNonZero) {
+          const extraMsg = Object.entries(lengths)
+            .filter(([_, len]) => len > minNonZero)
+            .map(([k, len]) => `${meta[k].label}: ${len - minNonZero} extra value(s)`)
+            .join(' · ');
+          setLengthNote(`Length mismatch: inputs are aligned by index; some fields have more values than others. ${extraMsg}`);
+        }
+
+        const rows = [];
+        const tol = 1e-8;
+
+        for (let i = 0; i < maxLen; i++) {
+          const warn = [];
+
+          const iqrTok = parsed.iqr[i];
+          const q1Tok = parsed.q1[i];
+          const q3Tok = parsed.q3[i];
+          const mTok = parsed.median[i];
+          const nTok = parsed.n[i];
+
+          const hasQ1 = !!q1Tok && q1Tok.ok;
+          const hasQ3 = !!q3Tok && q3Tok.ok;
+          const hasIQR = !!iqrTok && iqrTok.ok;
+
+          let iqrUsed = null;
+          let iqrSource = '';
+
+          // Determine IQR for this row (selected input type)
+          if (inputMode === 'q1q3') {
+            if (!(hasQ1 && hasQ3)) {
+              rows.push({
+                row: i + 1,
+                status: 'err',
+                message: 'Missing required input(s) for this row.',
+                iqr_source: 'Q1/Q3',
+                iqr_provided: null,
+                q1: (inputMode === 'q1q3' && hasQ1) ? q1Tok.val : null,
+                q3: (inputMode === 'q1q3' && hasQ3) ? q3Tok.val : null,
+                iqr_used: null,
+                sd: null,
+                approx: 'Approximation',
+                screen: null,
+                warnings: 'Provide both Q1 and Q3 for each row.'
+              });
+              continue;
+            }
+
+            if (q3Tok.val < q1Tok.val) {
+              rows.push({
+                row: i + 1,
+                status: 'err',
+                message: 'Q3 must be ≥ Q1.',
+                iqr_source: 'Q1/Q3',
+                iqr_provided: null,
+                q1: q1Tok.val,
+                q3: q3Tok.val,
+                iqr_used: null,
+                sd: null,
+                approx: 'Approximation',
+                screen: null,
+                warnings: 'Invalid quartiles.'
+              });
+              continue;
+            }
+
+            iqrUsed = q3Tok.val - q1Tok.val;
+            iqrSource = 'Q1/Q3';
+          } else {
+            if (!hasIQR) {
+              rows.push({
+                row: i + 1,
+                status: 'err',
+                message: 'Missing required input(s) for this row.',
+                iqr_source: 'IQR',
+                iqr_provided: null,
+                q1: null,
+                q3: null,
+                iqr_used: null,
+                sd: null,
+                approx: 'Approximation',
+                screen: null,
+                warnings: 'Provide an IQR value for each row.'
+              });
+              continue;
+            }
+
+            iqrUsed = iqrTok.val;
+            iqrSource = 'IQR';
+          }
+
+          if (!(iqrUsed >= 0)) {
+            rows.push({
+              row: i + 1,
+              status: 'err',
+              message: 'IQR must be ≥ 0.',
+              iqr_source: iqrSource,
+              iqr_provided: null,
+              q1: (inputMode === 'q1q3' && hasQ1) ? q1Tok.val : null,
+              q3: (inputMode === 'q1q3' && hasQ3) ? q3Tok.val : null,
+              iqr_used: iqrUsed,
+              sd: null,
+              approx: 'Approximation',
+              screen: null,
+              warnings: 'Invalid IQR.'
+            });
+            continue;
+          }
+
+
+          if (!(iqrUsed >= 0)) {
+            rows.push({
+              row: i + 1,
+              status: 'err',
+              message: 'IQR must be ≥ 0.',
+              iqr_source: iqrSource,
+              iqr_provided: (inputMode === 'iqr' && hasIQR) ? iqrTok.val : null,
+              q1: (inputMode === 'q1q3' && hasQ1) ? q1Tok.val : null,
+              q3: (inputMode === 'q1q3' && hasQ3) ? q3Tok.val : null,
+              iqr_used: iqrUsed,
+              sd: null,
+              approx: 'Approximation',
+              screen: null,
+              warnings: 'Invalid IQR.'
+            });
+            continue;
+          }
+
+          
+          const sd = iqrUsed / NORMAL_CONST;
+
+          // Optional screen
+          let screenBadge = null;
+          if (screenOn) {
+            const q1v = hasQ1 ? q1Tok.val : NaN;
+            const q3v = hasQ3 ? q3Tok.val : NaN;
+            const mv = (mTok && mTok.ok) ? mTok.val : NaN;
+            const nv = (nTok && nTok.ok) ? nTok.val : NaN;
+            screenBadge = computeScreenBadge(q1v, q3v, mv, nv);
+            if (!screenBadge) {
+              warn.push('Optional screen not available for this row (requires Q1, Q3, median, and n).');
+            } else if (screenBadge.kind === 'warn') {
+              warn.push(screenBadge.label);
+            }
+          }
+
+          const status = warn.length ? 'warn' : 'ok';
+
+          rows.push({
+            row: i + 1,
+            status,
+            message: status === 'ok' ? 'Computed.' : 'Computed with warnings.',
+            iqr_source: iqrSource,
+            iqr_provided: (inputMode === 'iqr' && hasIQR) ? iqrTok.val : null,
+            q1: (inputMode === 'q1q3' && hasQ1) ? q1Tok.val : null,
+            q3: (inputMode === 'q1q3' && hasQ3) ? q3Tok.val : null,
+            iqr_used: iqrUsed,
+            sd,
+            approx: 'Approximation',
+            screen: screenBadge ? screenBadge.label : '',
+            warnings: warn.join(' | ')
+          });
+        }
+
+        setResults(rows);
+
+        // CSV export
+        const header = [
+          'row',
+          'iqr_source',
+          'iqr_provided',
+          'q1',
+          'q3',
+          'iqr_used',
+          'approx_sd',
+          'distribution_assumption',
+          'optional_screen_enabled',
+          'screen_result',
+          'status',
+          'message',
+          'warnings'
+        ];
+
+        const lines = [header.join(',')];
+        for (const r of rows) {
+          const line = [
+            r.row,
+            r.iqr_source,
+            (r.iqr_provided === null || r.iqr_provided === undefined) ? '' : formatNumber(r.iqr_provided),
+            (r.q1 === null || r.q1 === undefined) ? '' : formatNumber(r.q1),
+            (r.q3 === null || r.q3 === undefined) ? '' : formatNumber(r.q3),
+            (r.iqr_used === null || r.iqr_used === undefined) ? '' : formatNumber(r.iqr_used),
+            (r.sd === null || r.sd === undefined) ? '' : formatNumber(r.sd),
+            'Normal-approximation',
+            screenOn ? 'Yes' : 'No',
+            r.screen || '',
+            r.status,
+            r.message,
+            r.warnings || ''
+          ].map(csvEscape);
+          lines.push(line.join(','));
+        }
+
+        setCsvText(lines.join('\n'));
+      }
+
+      async function copyCsv() {
+        try {
+          await navigator.clipboard.writeText(csvText || '');
+        } catch {
+          alert('Clipboard copy failed in this browser. You can still use Download CSV.');
+        }
+      }
+
+      function downloadCsv() {
+        const blob = new Blob([csvText || ''], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'entropy_iqr_to_sd_results.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function resetAll() {
+        setInputMode('iqr');
+        setScreenOn(false);
+        setDecimals(4);
+        setInputs({ iqr: '', q1: '', q3: '', median: '', n: '' });
+        setResults([]);
+        setLengthNote('');
+        setCsvText('');
+
+        setParsedFile(null);
+        setFileStatus('No file loaded.');
+        setColModalOpen(false);
+        setColSelections({});
+        setHasHeader(true);
+
+        // Allow re-uploading the same filename immediately after reset
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+
+      // -----------------------------
+      // File upload + column picker
+      // -----------------------------
+
+      async function handleFile(file) {
+        const name = file?.name || 'file';
+        const ext = name.toLowerCase().split('.').pop();
+        setFileStatus(`Loaded: ${name}`);
+
+        try {
+          let rows;
+          if (ext === 'csv' || ext === 'txt') {
+            const text = await file.text();
+            const firstLine = text.split(/\r?\n/)[0] ?? '';
+            const delim = detectDelimiter(firstLine);
+            rows = parseCSV(text, delim);
+          } else if (ext === 'xlsx') {
+            if (!window.XLSX) throw new Error('XLSX parser not available. Check your network connection.');
+            const buf = await file.arrayBuffer();
+            const wb = window.XLSX.read(buf, { type: 'array' });
+            const sheetName = wb.SheetNames[0];
+            const ws = wb.Sheets[sheetName];
+            rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+          } else {
+            throw new Error('Unsupported file type. Please upload .csv, .txt, or .xlsx.');
+          }
+
+          if (!rows || rows.length < 1) throw new Error('File appears empty.');
+
+          const headerGuess = looksLikeHeader(rows[0]);
+          setParsedFile({ rows, filename: name, headerGuess });
+          setHasHeader(headerGuess);
+
+          // Init column selections for all fields (always show iqr/q1/q3; median/n available too)
+          const maxCols = Math.max(...rows.map(r => r.length));
+          const keys = (inputMode === 'iqr' ? ['iqr'] : ['q1','q3']).concat(screenOn ? ['median','n'] : []);
+          const initial = {};
+          keys.forEach((k, idx) => { initial[k] = Math.min(idx, Math.max(0, maxCols - 1)); });
+          setColSelections(initial);
+          setColModalOpen(true);
+        } catch (e) {
+          setParsedFile(null);
+          setFileStatus('No file loaded.');
+          // Allow selecting the same file again after a parse failure
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          alert(String(e?.message || e));
+        }
+      }
+
+      function colName(rows, idx, headerOn) {
+        const maxCols = Math.max(...rows.map(r => r.length));
+        const defaultNames = Array.from({ length: maxCols }, (_, i) => `Column ${String.fromCharCode(65 + i)}`);
+        if (!headerOn) return defaultNames[idx] || `Column ${idx + 1}`;
+        const h = String(rows?.[0]?.[idx] ?? '').trim();
+        return h ? h : (defaultNames[idx] || `Column ${idx + 1}`);
+      }
+
+      function applyColumns() {
+        if (!parsedFile) return;
+        const { rows } = parsedFile;
+        const start = hasHeader ? 1 : 0;
+
+        const keys = ['iqr', 'q1', 'q3', 'median', 'n'];
+        const cols = {};
+        keys.forEach(k => cols[k] = []);
+
+        for (let i = start; i < rows.length; i++) {
+          const r = rows[i] || [];
+          keys.forEach((k) => {
+            const idx = Number(colSelections[k]);
+            const v = (r[idx] ?? '');
+            cols[k].push(String(v).trim());
+          });
+        }
+
+        {
+        const next = { iqr: '', q1: '', q3: '', median: '', n: '' };
+        Object.keys(cols).forEach((k) => {
+          next[k] = cols[k].join(', ');
+        });
+        setInputs(next);
+      }
+
+        setColModalOpen(false);
+        setResults([]);
+        setCsvText('');
+      }
+
+      const canExport = results.length > 0 && (csvText || '').length > 0;
+
+      const summaryColor = fieldSummary.kind === 'err'
+        ? 'text-red-700'
+        : fieldSummary.kind === 'warn'
+          ? 'text-amber-700'
+          : 'text-emerald-700';
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* Header */}
+          <header>
+            <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-[220px]">
+                {logoOk ? (
+                  <img
+                    src="Entropy.png"
+                    alt="Entropy"
+                    className="h-9 w-auto block"
+                    onError={() => setLogoOk(false)}
+                  />
+                ) : (
+                  <div className="logo-fallback" aria-hidden="true">
+                    <span className="main">Σntr</span><span className="omega">Ω</span><span className="main">.py</span>
+                  </div>
+                )}
+              </div>
+              <a className="btn-secondary" href="Convert Statistical Quantities.html" title="Return to the tools list">
+                <span aria-hidden="true">←</span>
+                <span>Back to Tools</span>
+              </a>
+            </div>
+          </header>
+
+          {/* Main */}
+          <main className="flex-1">
+            <div className="max-w-6xl mx-auto px-4 pt-6 pb-12">
+              {/* Title */}
+              <section className="animate-fade-up" style={{ animationDelay: '.05s' }}>
+                <h1 className="text-3xl font-bold text-[#184B44] mb-3 text-center">Interquartile range to standard deviation conversion</h1>
+                <p className="text-sm text-slate-600 leading-relaxed text-center">
+                  Approximate SD from IQR when only quartile spread is reported (normal-approximation).
+                </p>
+              </section>
+
+              {/* Assumptions */}
+              <section className="animate-fade-up mt-5" style={{ animationDelay: '.10s' }}>
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-lg font-semibold text-slate-800">Assumptions</div>
+                      <div className="text-sm text-slate-600 leading-relaxed">These notes apply to all rows; per-row issues are listed in the results table.</div>
+                    </div>
+                    <div className="text-xs text-slate-600 bg-white border border-amber-200 rounded-full px-3 py-1">
+                      Normal-approximation · {screenOn ? 'Screen ON' : 'Screen OFF'}
+                    </div>
+                  </div>
+                  <ul className="mt-3 list-disc pl-5 text-sm text-slate-700 leading-relaxed">
+                    {assumptionsList.map((a, i) => (<li key={i} className="mt-2">{a}</li>))}
+                  </ul>
+                </div>
+              </section>
+
+              {/* Calculator */}
+              <section className="animate-fade-up mt-6" style={{ animationDelay: '.15s' }}>
+                <div className="tool-card">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-lg font-semibold text-slate-800">Calculator</div>
+                      <div className="text-sm text-slate-600 leading-relaxed">Enter comma-separated lists (aligned by index) or import from a file.</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <InfoIconButton label="Open infographic" onClick={() => setInfoOpen(true)} />
+                    </div>
+                  </div>
+
+                  {/* Settings */}
+                  <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-medium text-slate-800">Input type</div>
+                          <div className="text-xs text-slate-500 mt-1">Choose IQR directly or provide Q1 and Q3.</div>
+                        </div>
+                        <div className={"relative inline-block w-12 h-6 select-none " + (screenOn ? 'opacity-60' : '')}>
+                          <input
+                            type="checkbox"
+                            checked={inputMode === 'q1q3'}
+                            disabled={screenOn}
+                            onChange={(e) => {
+                              const on = e.target.checked;
+                              const nextMode = on ? 'q1q3' : 'iqr';
+                              setInputMode(nextMode);
+
+                              // Reset computed outputs/state to avoid any stale carryover when switching modes
+                              setResults([]);
+                              setCsvText('');
+                              setLengthNote('');
+
+                              // Clear fields not used in the selected mode (prevents old values showing up in new results)
+                              setInputs((prev) => nextMode === 'iqr'
+                                ? { ...prev, q1: '', q3: '', median: '', n: '' }
+                                : { ...prev, iqr: '', median: '', n: '' }
+                              );
+                            }}
+                            className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-2 border-slate-300 appearance-none cursor-pointer transition-all duration-200 ease-in-out"
+                            style={{ top: '0px', right: (inputMode === 'q1q3') ? '0px' : '24px' }}
+                            aria-label="Toggle input type between IQR and Q1/Q3"
+                          />
+                          <label className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-200 cursor-pointer transition" />
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs text-slate-500">
+                        <span className="font-medium text-slate-700">{inputMode === 'iqr' ? 'IQR list' : 'Q1 & Q3 lists'}</span>
+                        {screenOn ? ' (locked while screen is ON)' : ''}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="text-sm font-medium text-slate-800">Output decimals</div>
+                      <div className="mt-2 flex items-center gap-3">
+                        <input
+                          type="range"
+                          min="2"
+                          max="8"
+                          step="1"
+                          value={decimals}
+                          onChange={(e) => setDecimals(clamp(Number(e.target.value), 2, 8))}
+                          className="w-full"
+                          aria-label="Decimals slider"
+                        />
+                        <input
+                          type="number"
+                          min="2"
+                          max="8"
+                          step="1"
+                          value={decimals}
+                          onChange={(e) => setDecimals(clamp(Number(e.target.value), 2, 8))}
+                          className="w-20 rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-[rgba(24,75,68,0.15)] focus:border-[var(--brand-primary)]"
+                          aria-label="Decimals numeric"
+                        />
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">Applies to table display and CSV numeric formatting.</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-medium text-slate-800">Optional normality screen</div>
+                          <div className="text-xs text-slate-500 mt-1">Off by default.</div>
+                        </div>
+                        <div className="relative inline-block w-12 h-6 select-none">
+                          <input
+                            type="checkbox"
+                            checked={screenOn}
+                            onChange={(e) => {
+                              const on = e.target.checked;
+                              setScreenOn(on);
+                              if (on) setInputMode('q1q3');
+
+                              // Reset computed outputs/state when toggling the screen (prevents stale table/export)
+                              setResults([]);
+                              setCsvText('');
+                              setLengthNote('');
+
+                              // Clear inputs that are no longer relevant
+                              setInputs((prev) => {
+                                if (on) {
+                                  // Screen uses quartiles; clear IQR to avoid confusion/carryover
+                                  return { ...prev, iqr: '' };
+                                }
+                                // Screen turned off; clear screen-only inputs
+                                return { ...prev, median: '', n: '' };
+                              });
+                            }}
+                            className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-2 border-slate-300 appearance-none cursor-pointer transition-all duration-200 ease-in-out"
+                            style={{ top: '0px', right: screenOn ? '0px' : '24px' }}
+                            aria-label="Toggle optional screen"
+                          />
+                          <label className="toggle-label block overflow-hidden h-6 rounded-full bg-slate-200 cursor-pointer transition" />
+                        </div>
+                      </div>
+                      <div className="text-xs text-slate-500 mt-2">When ON, additional inputs appear and a per-row screen badge is added.</div>
+                    </div>
+                  </div>
+
+                  {/* Inputs + Results */}
+                  <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* Inputs */}
+                    <div className="min-w-0 lg:col-span-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-lg font-semibold text-slate-800">Inputs</div>
+                          <div className="text-sm text-slate-600">Separate bars for each field (comma-separated).</div>
+                        </div>
+                        <div className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-3 py-1">Strict typing · per-row validation</div>
+                      </div>
+
+                      <div className="mt-4 space-y-4">
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+                          <div className="text-sm font-medium text-slate-800">Manual entry</div>
+                          <div className="mt-3 grid grid-cols-1 gap-4">
+                            {inputMode === 'iqr' ? (
+                              <InputBar id="in-iqr" label={meta.iqr.label} helper={meta.iqr.helper} value={inputs.iqr} onChange={(v) => updateInput('iqr', v)} placeholder={meta.iqr.placeholder} />
+                            ) : (
+                              <>
+                                <InputBar id="in-q1" label={meta.q1.label} helper={meta.q1.helper} value={inputs.q1} onChange={(v) => updateInput('q1', v)} placeholder={meta.q1.placeholder} />
+                                <InputBar id="in-q3" label={meta.q3.label} helper={meta.q3.helper} value={inputs.q3} onChange={(v) => updateInput('q3', v)} placeholder={meta.q3.placeholder} />
+                              </>
+                            )}
+
+                            {screenOn ? (
+                              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                                <div className="text-sm font-medium text-slate-800">Additional inputs (normality screen ON)</div>
+                                <div className="mt-3 grid grid-cols-1 gap-4">
+                                  <InputBar id="in-median" label={meta.median.label} helper={meta.median.helper} value={inputs.median} onChange={(v) => updateInput('median', v)} placeholder={meta.median.placeholder} />
+                                  <InputBar id="in-n" label={meta.n.label} helper={meta.n.helper} value={inputs.n} onChange={(v) => updateInput('n', v)} placeholder={meta.n.placeholder} />
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        <details className="rounded-2xl border border-slate-200 bg-white/70 p-4">
+                          <summary className="cursor-pointer text-sm font-medium text-slate-800">
+                            File upload (optional)
+                            <span className="ml-2 text-xs font-normal text-slate-500">{fileStatus}</span>
+                          </summary>
+
+                          <div
+                            className={
+                              "mt-3 rounded-2xl border-2 border-dashed p-4 transition " +
+                              (dropActive ? "border-[var(--brand-primary)] bg-[rgba(230,255,250,0.6)]" : "border-slate-300 bg-white/70")
+                            }
+                            onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDropActive(true); }}
+                            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropActive(true); }}
+                            onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDropActive(false); }}
+                            onDrop={(e) => {
+                              e.preventDefault(); e.stopPropagation();
+                              setDropActive(false);
+                              const f = e.dataTransfer?.files?.[0];
+                              if (f) handleFile(f);
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Upload a CSV, TXT, or XLSX file"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <div className="text-sm font-medium text-slate-800">Drag &amp; drop a .csv, .txt, or .xlsx file</div>
+                                <div className="text-xs text-slate-500 mt-1">Upload → parse → choose columns → populate inputs.</div>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => fileInputRef.current?.click()}
+                              >
+                                Browse files
+                              </button>
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".csv,.txt,.xlsx"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) handleFile(f);
+                                  // Important: clear so the same filename can be selected again immediately
+                                  e.target.value = '';
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </details>
+
+                        <details className="rounded-2xl border border-slate-200 bg-white p-4">
+                          <summary className="cursor-pointer text-sm font-medium text-slate-800">Advanced</summary>
+                          <div className="mt-3 text-sm text-slate-600 leading-relaxed">
+                            <div className="text-sm font-medium text-slate-800">Normal-theory constant</div>
+                            <div className="mt-1">This module uses a fixed scaling constant: <span className="font-medium text-slate-800">{NORMAL_CONST.toFixed(3)}</span>.</div>
+                          </div>
+                        </details>
+
+                        <div className={"text-sm leading-relaxed " + summaryColor}>
+                          <span className="font-medium">{fieldSummary.kind === 'ok' ? 'Ready:' : fieldSummary.kind === 'warn' ? 'Warnings:' : 'Input issues:'}</span>
+                          <span className="ml-2 text-slate-700">{fieldSummary.text}</span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                          <button type="button" className="btn-brand" onClick={run}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                              <path d="M5 12h14" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                              <path d="M13 5l7 7-7 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            Run
+                          </button>
+                          <button type="button" className="btn-danger" onClick={resetAll}>Reset</button>
+                        </div>
+
+                        {lengthNote ? (
+                          <div className="text-sm text-amber-700 leading-relaxed">
+                            <span className="font-medium">Note:</span> {lengthNote}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Results */}
+                    <div className="min-w-0 lg:col-span-7">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-lg font-semibold text-slate-800">Results</div>
+                          <div className="text-sm text-slate-600">Valid rows are computed even if some rows are invalid.</div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 justify-end">
+                          <button type="button" className="btn-secondary" onClick={copyCsv} disabled={!canExport}>Copy to Clipboard</button>
+                          <button type="button" className="btn-secondary" onClick={downloadCsv} disabled={!canExport}>Download CSV</button>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-3 py-1">{results.length} row{results.length === 1 ? '' : 's'}</span>
+                        <span className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-3 py-1">Decimals: {decimals}</span>
+                      </div>
+
+                      <div className="mt-4 table-wrap">
+                        <table aria-label="Results table">
+                          <thead>
+                            <tr>
+                              <th>Row</th>
+                              <th>Status</th>
+                              <th>Message</th>
+                              <th>IQR source</th>
+                              <th>IQR used</th>
+                              <th>Q1</th>
+                              <th>Q3</th>
+                              <th>Approx SD</th>
+                              <th>Approximation</th>
+                              <th>Screen result</th>
+                              <th>Warnings</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {results.length === 0 ? (
+                              <tr>
+                                <td colSpan="11" className="text-slate-500">Run the calculator to see results.</td>
+                              </tr>
+                            ) : (
+                              results.map((r, idx) => (
+                                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}>
+                                  <td style={{ fontVariantNumeric: 'tabular-nums' }}>{r.row}</td>
+                                  <td>
+                                    <div className="flex items-center gap-2">
+                                      <StatusIcon status={r.status} />
+                                      <span className="text-xs text-slate-600 font-medium">{String(r.status || '').toUpperCase()}</span>
+                                    </div>
+                                  </td>
+                                  <td className={r.status === 'err' ? 'text-red-700' : (r.status === 'warn' ? 'text-amber-700' : 'text-emerald-700')}>{r.message}</td>
+                                  <td className="text-slate-700">{r.iqr_source || '—'}</td>
+                                  <td className="text-slate-700" style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtForTable(r.iqr_used)}</td>
+                                  <td className="text-slate-700" style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtForTable(r.q1)}</td>
+                                  <td className="text-slate-700" style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtForTable(r.q3)}</td>
+                                  <td className="text-slate-700" style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtForTable(r.sd)}</td>
+                                  <td className="text-slate-700">{r.approx}</td>
+                                  <td className="text-slate-700">{r.screen || (screenOn ? '—' : '')}</td>
+                                  <td className="text-slate-700">{r.warnings || ''}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="mt-3 text-sm text-slate-600 leading-relaxed">Exported CSV includes inputs, outputs, and warning flags.</div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* References */}
+              <section className="animate-fade-up mt-8" style={{ animationDelay: '.20s' }}>
+                <div className="references-plain rounded-2xl px-6 py-5">
+                  <div className="text-lg font-semibold text-slate-800">References</div>
+                  <div className="mt-2 text-sm text-slate-600 leading-relaxed">Calculation note: This calculator uses a logit-link related normal-theory constant (internally) to convert between interquartile spread and standard deviation.</div>
+                  <ul className="mt-3 list-disc pl-5 text-sm text-slate-700 leading-relaxed">
+                    <li>Wan, X., Wang, W., Liu, J., &amp; Tong, T. (2014). Estimating the sample mean and standard deviation from the sample size, median, range and/or interquartile range. <span className="italic">BMC Medical Research Methodology, 14</span>, 135. https://doi.org/10.1186/1471-2288-14-135</li>
+                    <li>Higgins, J. P. T., Thomas, J., Chandler, J., Cumpston, M., Li, T., Page, M. J., &amp; Welch, V. A. (Eds.). (2024). <span className="italic">Cochrane Handbook for Systematic Reviews of Interventions</span> (Chapter 6). Cochrane.</li>
+                    <li>Shi, J., Luo, D., Wan, X., Liu, Y., Liu, J., Bian, Z., &amp; Tong, T. (2023). Detecting the skewness of data from the five-number summary and its application in meta-analysis. <span className="italic">Statistical Methods in Medical Research, 32</span>(7), 1338–1360. https://doi.org/10.1177/09622802231172043</li>
+                  </ul>
+                </div>
+              </section>
+            </div>
+          </main>
+
+          {/* Footer */}
+          <footer className="border-t border-slate-200 bg-white">
+            <div className="max-w-6xl mx-auto px-4 py-6 text-center">
+              <div className="text-sm text-slate-600">© {new Date().getFullYear()} Entro.py | Threadminds</div>
+            </div>
+          </footer>
+
+          {/* Column picker modal */}
+          <Modal open={colModalOpen} title="Choose columns to import" onClose={() => setColModalOpen(false)}>
+            {!parsedFile ? (
+              <div className="text-sm text-slate-600">No file loaded.</div>
+            ) : (
+              <div>
+                <div className="text-sm text-slate-600 leading-relaxed">Select which file columns should populate the input lists.</div>
+
+                <div className="mt-4 flex items-center gap-3 flex-wrap">
+                  <label className="text-sm text-slate-700 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={hasHeader}
+                      onChange={(e) => setHasHeader(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    Treat first row as headers
+                  </label>
+                  <span className="text-xs text-slate-500">{parsedFile.filename} · {parsedFile.rows.length} rows</span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(inputMode === 'iqr' ? ['iqr'] : ['q1','q3']).concat(screenOn ? ['median','n'] : []).map((k) => {
+                    const maxCols = Math.max(...parsedFile.rows.map(r => r.length));
+                    const opts = Array.from({ length: maxCols }, (_, i) => ({ i, name: colName(parsedFile.rows, i, hasHeader) }));
+                    return (
+                      <div key={k}>
+                        <div className="text-sm font-medium text-slate-800">{meta[k].label}</div>
+                        <select
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-[rgba(24,75,68,0.15)] focus:border-[var(--brand-primary)]"
+                          value={String(colSelections[k] ?? 0)}
+                          onChange={(e) => setColSelections((prev) => ({ ...prev, [k]: Number(e.target.value) }))}
+                        >
+                          {opts.map(o => (<option key={o.i} value={o.i}>{o.name}</option>))}
+                        </select>
+                        <div className="text-xs text-slate-500 mt-1">Choose the column for {meta[k].helper}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <button type="button" className="btn-brand" onClick={applyColumns}>Use selected columns</button>
+                  <button type="button" className="btn-secondary" onClick={() => setColModalOpen(false)}>Cancel</button>
+                </div>
+              </div>
+            )}
+          </Modal>
+
+          {/* Infographic modal */}
+          <Modal open={infoOpen} title="Infographic" onClose={() => setInfoOpen(false)}>
+            <div className="modal-img">
+              <img src="iqr_to_sd_infographic.png" alt="Infographic" />
+            </div>
+            {/* Non-editable placeholder space for future content */}
+            <div
+              className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 min-h-[90px]"
+              id="infographicTextPlaceholder"
+              aria-label="Infographic text placeholder"
+            >
+              <span>This infographic helps you understand two common ways to measure how spread out your data is. The Interquartile Range (IQR) focuses on the middle 50% of your data and is perfect for skewed data or when you have extreme outliers, as it ignores them. The Standard Deviation (SD) measures the average distance of every data point from the mean. It is best used for symmetric, bell-shaped data where there are no extreme values to distort the result.</span>
+            </div>
+          </Modal>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+    // -----------------------------
+    // Minimal tests (opt-in)
+    // -----------------------------
+    if (window.__RUN_TESTS__) {
+      console.assert(Math.abs(NORMAL_CONST - 1.3489795) < 1e-4, 'NORMAL_CONST sanity check failed');
+      // IQR 1.349 should produce SD ~ 1
+      const sd = 1.349 / NORMAL_CONST;
+      console.assert(Math.abs(sd - 1) < 1e-3, 'SD conversion sanity check failed');
+      // Basic skewness screen behavior
+      const b1 = (function(){
+        const q1=1, q3=3, m=2, n=100;
+        // symmetric summary should not be flagged
+        const T2 = (q1 + q3 - 2*m)/(q3-q1);
+        const c = (2.65/Math.sqrt(n)) - (6/(n*n));
+        return Math.abs(T2) <= c;
+      })();
+      console.assert(b1 === true, 'Skewness screen symmetry sanity check failed');
+    }
+  </script>
+</body>
+</html>
