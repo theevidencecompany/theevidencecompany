@@ -17,6 +17,7 @@
 
   <!-- SheetJS (for .xlsx) -->
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <script>
     // Disable right-click
     document.addEventListener('contextmenu', e => e.preventDefault());
@@ -47,7 +48,6 @@
       }
     });
   </script>
-
 
   <style>
     :root{
@@ -82,18 +82,21 @@
 
     /* Shared components */
     .tool-card{
-      border: 1px solid rgba(24, 75, 68, 0.1);
-      border-radius: 1rem;
-      padding: 2rem;
-      background-color: #fff;
+      background:#fff;
+      border:1px solid rgba(24,75,68,0.1);
+      border-radius:1rem;
+      padding:2rem;
       box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
     }
 
-    .tool-card-2{
-      border-top: 1px solid rgba(24, 75, 68, 0.1);
-      border-radius: 1rem;
-      padding: 2rem;
-      background-color: #f0fdfa;
+    /* References block (no raised card; background matches page; top border only) */
+    .references-block{
+      background-color:#f0fdfa;
+      border:none;
+      border-top:1px solid rgba(24,75,68,0.18);
+      box-shadow:none;
+      padding:1.25rem;
+      border-radius:1rem;
     }
 
     .btn-brand{
@@ -246,6 +249,12 @@
     /* Small utility */
     .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 
+    /* Collapsible upload (details/summary) */
+    details > summary{ list-style:none; }
+    details > summary::-webkit-details-marker{ display:none; }
+    details[open] summary .chev{ transform: rotate(180deg); }
+    summary .chev{ transition: transform .2s; }
+
     @media (max-width: 560px){
       table{ min-width: 760px; }
     }
@@ -317,8 +326,8 @@
         <!-- Mode selector (segmented buttons) -->
         <div class="mt-4">
           <div class="label">Mode</div>
-          <div class="mt-2 flex flex-wrap gap-2 rounded-full border border-slate-200 bg-slate-50 p-1">
-            <button role="tab" id="tab-m1" aria-selected="true" data-mode="m1" class="px-3 py-2 rounded-full text-sm font-medium">2×2 table → RR / SE / CI</button>
+          <div class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 rounded-full border border-slate-200 bg-slate-50 p-1">
+            <button role="tab" id="tab-m1" aria-selected="true" data-mode="m1" class="px-3 py-2 rounded-full text-sm font-medium w-full text-center">2×2 table → RR / SE / CI</button>
             <button role="tab" id="tab-m2" aria-selected="false" data-mode="m2" class="px-3 py-2 rounded-full text-sm font-medium">RR + SE → CI</button>
             <button role="tab" id="tab-m3" aria-selected="false" data-mode="m3" class="px-3 py-2 rounded-full text-sm font-medium">RR + CI → SE</button>
           </div>
@@ -392,21 +401,35 @@
           </div>
         </div>
 
-        <div id="manualInputs" class="mt-4 flex flex-wrap gap-3 items-end"></div>
+        <div id="manualInputs" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         <div id="fieldErrors" class="note mt-2" aria-live="polite"></div>
 
-        <!-- Upload -->
-        <div id="dropZone" class="mt-5 rounded-xl border-2 border-dashed border-slate-300 bg-white/60 p-4" tabindex="0" role="button" aria-label="Upload a CSV, TXT, or XLSX file">
-          <div class="flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <div class="text-sm font-medium text-slate-900">Drag & drop a .csv, .txt, or .xlsx file</div>
-              <div class="hint mt-1">Upload → parse → choose columns → populate inputs.</div>
+        <!-- Upload (collapsible) -->
+        <details id="uploadDetails" class="mt-5" open>
+          <summary class="cursor-pointer select-none rounded-xl border border-slate-200 bg-white/60 px-4 py-3">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="text-sm font-medium text-slate-900">Drag &amp; drop a .csv, .txt, or .xlsx file</div>
+                <div class="hint mt-1">Upload → parse → choose columns → populate inputs.</div>
+              </div>
+              <svg class="chev h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </div>
-            <button class="btn-secondary" type="button" id="browseBtn">Browse files</button>
-            <input class="sr-only" id="fileInput" type="file" accept=".csv,.txt,.xlsx" />
+          </summary>
+
+          <div id="dropZone" class="mt-3 rounded-xl border-2 border-dashed border-slate-300 bg-white/60 p-4" tabindex="0" role="button" aria-label="Upload a CSV, TXT, or XLSX file">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div class="text-sm font-medium text-slate-900">Drop a file here (or browse)</div>
+                <div class="hint mt-1">Accepted formats: .csv, .txt, .xlsx</div>
+              </div>
+              <button class="btn-secondary" type="button" id="browseBtn">Browse files</button>
+              <input class="sr-only" id="fileInput" type="file" accept=".csv,.txt,.xlsx" />
+            </div>
+            <div class="note mt-2" id="fileStatus">No file loaded.</div>
           </div>
-          <div class="note mt-2" id="fileStatus">No file loaded.</div>
-        </div>
+        </details>
 
         <div class="mt-5 flex flex-wrap gap-3">
           <button class="btn-brand" type="button" id="runBtn">
@@ -429,7 +452,7 @@
           </div>
         </div>
 
-        <div class="mt-4 flex items-start justify-between gap-3 flex-wrap">
+        <div class="mt-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div class="flex flex-wrap gap-2">
             <span class="pill" id="rowPill">0 rows</span>
             <span class="pill" id="zPill">Z-value: —</span>
@@ -452,17 +475,20 @@
     </div>
 
     <!-- References (plain bullets, no equations) -->
-    <section class=".tool-card-2 mt-6 animate-fade-up" style="animation-delay:.28s">
+    <section class="references-block mt-6 animate-fade-up" style="animation-delay:.28s">
       <div class="text-sm font-medium uppercase tracking-[.08em] text-slate-500">References</div>
       <ul class="mt-3 list-disc pl-5 text-base">
-        <li>Chapter 6: Choosing effect measures and computing estimates of effect | Cochrane. (n.d.). Retrieved December 18, 2025, from https://www.cochrane.org/authors/handbooks-and-manuals/handbook/current/chapter-06</li>
+        <li>Standard approach for relative risk uncertainty: compute a log-scale standard error, form a Wald interval on the log scale, then exponentiate the bounds back to the RR scale.</li>
+        <li>Two-sided vs one-sided handling: a two-sided interval splits the significance level across both tails, while a one-sided interval places the full significance level in a single tail.</li>
+        <li>Back-calculating log-scale standard errors from reported confidence bounds: use the interval width on the log scale together with the corresponding Z-value.</li>
       </ul>
     </section>
   </main>
 
   <footer class="border-t border-slate-200 bg-white/60">
     <div class="max-w-6xl mx-auto px-4 py-6 text-center">
-      <div class="note"> Entro.py | Threadminds</div>
+      <div class="note">© <span id="year"></span> Threadminds. All rights reserved.</div>
+      
     </div>
   </footer>
 
@@ -484,7 +510,7 @@
           <span class="note" id="filePreviewMeta"></span>
         </div>
 
-        <div id="colSelectors" class="mt-4 flex flex-wrap gap-3 items-end"></div>
+        <div id="colSelectors" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
 
         <div class="mt-5 flex flex-wrap gap-3">
           <button class="btn-brand" type="button" id="applyCols">Use selected columns</button>
@@ -611,6 +637,10 @@
       lastCsv: ''
     };
 
+    // clearResults is referenced by several UI listeners; define it up-front so it is always in scope.
+    // It will be replaced with the real implementation once the tool wiring is initialized.
+    let clearResults = function(){ };
+
     // ---------------------------
     // DOM
     // ---------------------------
@@ -668,6 +698,11 @@
     const filePreviewMeta = document.getElementById('filePreviewMeta');
     const colPreview = document.getElementById('colPreview');
 
+    // Column modal header toggle (single stable listener; avoids stacking once-handlers)
+    hasHeader.addEventListener('change', () => {
+      if(state.parsedFile) openColumnPicker();
+    });
+
     // Info modal
     const infoModalBack = document.getElementById('infoModalBack');
     const infoClose = document.getElementById('infoClose');
@@ -678,6 +713,59 @@
     // Info buttons
     const infoTwoOne = document.getElementById('infoTwoOne');
     const infoTail = document.getElementById('infoTail');
+
+    // ---------------------------
+    // Info modal wiring (infographics)
+    // ---------------------------
+    const TWO_ONE_SIDED_TEXT = "Choosing the right interval depends on whether you need to account for deviations in both directions or just one. A two-sided interval is used when any change is relevant, like testing if a new medication changes blood pressure either higher or lower than the current standard. A one-sided interval is used when you only care about a specific directional benefit, such as verifying that a new car battery lasts longer than the previous model.";
+
+    const ONE_SIDED_TAIL_TEXT = "A one-sided confidence interval puts the entire significance level α into one tail (the shaded rejection region), so you get just one bound at confidence 1−α instead of two. In the left-tailed / lower-bound case, the interval is [L, ∞), meaning “we’re 95% confident the true value is at least L,” which fits questions like “Is a lightbulb’s mean lifetime ≥ 10,000 hours?” In the right-tailed / upper-bound case, the interval is (−∞, U], meaning “we’re 95% confident the true value is no more than U,” which fits questions like “Is average pollution ≤ the safety threshold?” You use a one-tailed CI when only one direction matters (and you’re willing to ignore the other), and it lines up with a one-tailed test: if the spec/null value falls beyond your one-sided bound in the wrong direction, you’d reject at level α.";
+
+    function openInfoModal({ title, img, text }){
+      infoTitle.textContent = title;
+      infoImg.src = img;
+      infoImg.alt = title;
+      infoText.textContent = text;
+      infoModalBack.style.display = 'flex';
+    }
+
+    function closeInfoModal(){
+      infoModalBack.style.display = 'none';
+      // Clear src so re-open is always clean
+      infoImg.src = '';
+    }
+
+    if(infoTwoOne){
+      infoTwoOne.addEventListener('click', () => {
+        openInfoModal({
+          title: 'Two-sided vs One-sided',
+          img: 'Two One sided.png',
+          text: TWO_ONE_SIDED_TEXT
+        });
+      });
+    }
+
+    if(infoTail){
+      infoTail.addEventListener('click', () => {
+        openInfoModal({
+          title: 'Left-tailed vs Right-tailed',
+          img: 'One sided CI.png',
+          text: ONE_SIDED_TAIL_TEXT
+        });
+      });
+    }
+
+    if(infoClose){ infoClose.addEventListener('click', closeInfoModal); }
+    if(infoModalBack){
+      infoModalBack.addEventListener('click', (e) => { if(e.target === infoModalBack) closeInfoModal(); });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape'){
+        if(infoModalBack && infoModalBack.style.display === 'flex') closeInfoModal();
+        if(colModalBack && colModalBack.style.display === 'flex') closeColPicker();
+      }
+    });
 
     // ---------------------------
     // Inputs config (STRICT separate bars)
@@ -718,7 +806,7 @@
       keys.forEach((k, idx) => {
         const m = fieldMeta(k);
         const div = document.createElement('div');
-        div.className = 'min-w-[220px] flex-1';
+        div.className = 'min-w-0';
         div.innerHTML = `
           <div class="label" title="${escapeHtml(m.help)}">${escapeHtml(m.label)}</div>
           <input type="text" id="in-${k}" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 list-input" placeholder="${escapeHtml(m.placeholder)}" autocomplete="off" />
@@ -1067,354 +1155,7 @@
 
         throw new Error('Unknown mode.');
       } catch(e){
-        return { status: status === 'warn' ? 'warn' : 'err', message: String(e.message || e), out:null, notes: row.notes };
-      }
-    }
-
-    function buildColumns(){
-      if(state.mode === 'm1'){
-        return {
-          cols: ['Status','Message','a','b','c','d','RR','Standard error of log(RR)','Lower bound','Upper bound'],
-          keys:  ['status','message','a','b','c','d','rr','se','lcl','ucl']
-        };
-      }
-      if(state.mode === 'm2'){
-        return {
-          cols: ['Status','Message','RR','Standard error of log(RR)','Lower bound','Upper bound'],
-          keys: ['status','message','rr','se','lcl','ucl']
-        };
-      }
-      if(state.sided === 'two'){
-        return {
-          cols: ['Status','Message','RR','Lower bound','Upper bound','Standard error of log(RR)'],
-          keys: ['status','message','rr','lcl','ucl','se']
-        };
-      }
-      if(state.tail === 'left'){
-        return {
-          cols: ['Status','Message','RR','Lower bound','Standard error of log(RR)'],
-          keys: ['status','message','rr','lcl','se']
-        };
-      }
-      return {
-        cols: ['Status','Message','RR','Upper bound','Standard error of log(RR)'],
-        keys: ['status','message','rr','ucl','se']
-      };
-    }
-
-    function renderResults(rowsAligned, computedRows){
-      const { cols, keys } = buildColumns();
-      const thead = `<thead><tr>${cols.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>`;
-
-      let tbody = '<tbody>';
-      if(computedRows.length === 0){
-        tbody += `<tr><td colspan="${cols.length}" class="text-slate-500">No rows to display.</td></tr>`;
-      } else {
-        computedRows.forEach((r) => {
-          const st = r.status;
-          const msg = r.message + (r.notes?.length ? ` (${r.notes[0]}${r.notes.length>1?'…':''})` : '');
-
-          const record = { status: st, message: msg };
-          if(r.out){
-            Object.assign(record, r.out);
-          } else {
-            Object.assign(record, rowsAligned[r._rowIndex]?.values ?? {});
-          }
-
-          const cells = keys.map(k => {
-            if(k === 'status'){
-              return `<td><div style="display:flex; align-items:center; gap:8px">${icon(st)}<small style="color:#64748b; font-variant-numeric:tabular-nums">${escapeHtml(st.toUpperCase())}</small></div></td>`;
-            }
-            if(k === 'message'){
-              const cls = st==='err' ? 'dangerText' : (st==='warn' ? 'warnText' : 'okText');
-              return `<td class="${cls}">${escapeHtml(record.message ?? '')}</td>`;
-            }
-            const v = record[k];
-            return `<td style="font-variant-numeric:tabular-nums">${escapeHtml(fmt(v))}</td>`;
-          });
-
-          tbody += `<tr>${cells.join('')}</tr>`;
-        });
-      }
-      tbody += '</tbody>';
-
-      resultsTable.innerHTML = thead + tbody;
-
-      // CSV for copy/download
-      const csvRows = [];
-      csvRows.push(cols.join(','));
-      computedRows.forEach(r => {
-        const st = r.status;
-        const msg = r.message + (r.notes?.length ? ` (${r.notes.join(' | ')})` : '');
-        const rec = { status: st, message: msg };
-        if(r.out) Object.assign(rec, r.out);
-        const row = keys.map(k => {
-          if(k === 'status') return st;
-          if(k === 'message') return msg;
-          return fmt(rec[k]);
-        }).map(x => {
-          const s = String(x ?? '');
-          return /[\n\r,\"]/g.test(s) ? '"' + s.replace(/\"/g,'""') + '"' : s;
-        });
-        csvRows.push(row.join(','));
-      });
-      state.lastCsv = csvRows.join('\n');
-
-      copyBtn.disabled = computedRows.length === 0;
-      dlBtn.disabled = computedRows.length === 0;
-    }
-
-    function clearResults(soft){
-      state.results = [];
-      rowPill.textContent = '0 rows';
-      lengthNote.textContent = '';
-      copyBtn.disabled = true;
-      dlBtn.disabled = true;
-      if(!soft){
-        resultsTable.innerHTML = `<thead><tr><th>Status</th><th>Message</th></tr></thead><tbody><tr><td colspan="2" class="text-slate-500">Run the calculator to see results.</td></tr></tbody>`;
-      }
-    }
-
-    // ---------------------------
-    // Run
-    // ---------------------------
-    runBtn.addEventListener('click', () => {
-      validateFields(true);
-      syncConfidence();
-
-      const keys = requiredFields();
-      const aligned = alignRows(keys);
-
-      const { rows, minLen, maxLen, extras } = aligned;
-      rowPill.textContent = `${minLen} row${minLen===1?'':'s'}`;
-
-      const extraMsg = [];
-      extras.forEach(e => extraMsg.push(`${fieldMeta(e.key).label}: ${e.extra} extra value(s) ignored`));
-      if(maxLen !== minLen){
-        lengthNote.innerHTML = `<span class="warnText"><strong>Length mismatch:</strong></span> Processed up to the shortest list (${minLen}). ${extraMsg.length ? escapeHtml(extraMsg.join(' · ')) : ''}`;
-      } else {
-        lengthNote.textContent = '';
-      }
-
-      const computed = rows.map((row, idx) => {
-        const c = computeRow(row);
-        c._rowIndex = idx;
-        return c;
-      });
-
-      if(state.mode === 'm1'){
-        const zeroRows = computed.filter(r => r.notes?.some(n => n.toLowerCase().includes('zero'))).length;
-        if(zeroRows){
-          assumptionWarnings.innerHTML = `<div class="warnText"><strong>Notes:</strong></div><ul class="mt-2 list-disc pl-5"><li>${zeroRows} row(s) contain zero cells. Consider enabling the 0.5 continuity correction toggle if you need finite log-scale estimates.</li></ul>`;
-        }
-      }
-
-      const alignedRows = rows.map(r => ({ values: r.values }));
-      renderResults(alignedRows, computed);
-      state.results = computed;
-    });
-
-    copyBtn.addEventListener('click', async () => {
-      try{
-        await navigator.clipboard.writeText(state.lastCsv || '');
-        const old = copyBtn.textContent;
-        copyBtn.textContent = 'Copied!';
-        setTimeout(() => (copyBtn.textContent = old), 1200);
-      } catch {
-        alert('Clipboard copy failed in this browser. You can still use Download CSV.');
-      }
-    });
-
-    dlBtn.addEventListener('click', () => {
-      const blob = new Blob([state.lastCsv || ''], {type:'text/csv;charset=utf-8'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'threadminds_rr_ci_se_results.csv';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
-
-    resetBtn.addEventListener('click', () => {
-      state.mode = 'm1';
-      state.sided = 'two';
-      state.tail = 'left';
-      state.conf = 95;
-      state.cc = false;
-
-      // Tabs
-      setTab([...document.querySelectorAll('[data-mode]')], 'tab-m1');
-
-      // Toggles
-      sidedToggle.checked = false;
-      if(tailToggle) tailToggle.checked = false;
-      tailField.style.display = 'none';
-
-      // Confidence
-      confRange.value = '95';
-      confNum.value = '95';
-
-      // Continuity correction
-      ccToggle.checked = false;
-
-      // File
-      state.parsedFile = null;
-      fileStatus.textContent = 'No file loaded.';
-
-      // UI rebuild
-      buildManualInputs();
-      syncConfidence();
-      updateAssumptions();
-
-      clearResults(false);
-      validateFields(false);
-    });
-
-    // ---------------------------
-    // Info modals (EXACT image names + EXACT text)
-    // ---------------------------
-    function openInfo(which){
-      if(which === 'twoone'){
-        infoTitle.textContent = 'Two-sided vs One-sided';
-        infoImg.src = 'Two One sided.png';
-        infoText.textContent = 'Choosing the right interval depends on whether you need to account for deviations in both directions or just one. A two-sided interval is used when any change is relevant, like testing if a new medication changes blood pressure either higher or lower than the current standard. A one-sided interval is used when you only care about a specific directional benefit, such as verifying that a new car battery lasts longer than the previous model.';
-      } else {
-        infoTitle.textContent = 'Left-tailed vs Right-tailed';
-        infoImg.src = 'One sided CI.png';
-        infoText.textContent = 'A one-sided confidence interval puts the entire significance level α into one tail (the shaded rejection region), so you get just one bound at confidence 1−α instead of two. In the left-tailed / lower-bound case, the interval is [L, ∞), meaning “we’re 95% confident the true value is at least L,” which fits questions like “Is a lightbulb’s mean lifetime ≥ 10,000 hours?” In the right-tailed / upper-bound case, the interval is (−∞, U], meaning “we’re 95% confident the true value is no more than U,” which fits questions like “Is average pollution ≤ the safety threshold?” You use a one-tailed CI when only one direction matters (and you’re willing to ignore the other), and it lines up with a one-tailed test: if the spec/null value falls beyond your one-sided bound in the wrong direction, you’d reject at level α.';
-      }
-      infoModalBack.style.display = 'flex';
-    }
-
-    infoTwoOne.addEventListener('click', () => openInfo('twoone'));
-    infoTail.addEventListener('click', () => openInfo('tail'));
-    infoClose.addEventListener('click', () => (infoModalBack.style.display='none'));
-    infoModalBack.addEventListener('click', (e) => { if(e.target === infoModalBack) infoModalBack.style.display='none'; });
-
-    // ---------------------------
-    // File upload + parsing
-    // ---------------------------
-    browseBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', () => {
-      if(fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
-    });
-
-    ;['dragenter','dragover'].forEach(evt => {
-      dropZone.addEventListener(evt, (e) => {
-        e.preventDefault(); e.stopPropagation();
-        dropZone.classList.add('ring-4','ring-emerald-100');
-        dropZone.style.borderColor = 'var(--brand-primary)';
-      });
-    });
-    ;['dragleave','drop'].forEach(evt => {
-      dropZone.addEventListener(evt, (e) => {
-        e.preventDefault(); e.stopPropagation();
-        dropZone.classList.remove('ring-4','ring-emerald-100');
-        dropZone.style.borderColor = '';
-      });
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-      const f = e.dataTransfer?.files?.[0];
-      if(f) handleFile(f);
-    });
-
-    function detectDelimiter(line){
-      const c = (line.match(/,/g)||[]).length;
-      const t = (line.match(/\t/g)||[]).length;
-      const s = (line.match(/;/g)||[]).length;
-      const m = Math.max(c,t,s);
-      if(m === t) return '\t';
-      if(m === s) return ';';
-      return ',';
-    }
-
-    function parseCSV(text, delim){
-      const rows = [];
-      let row = [];
-      let cur = '';
-      let inQuotes = false;
-      for(let i=0;i<text.length;i++){
-        const ch = text[i];
-        const next = text[i+1];
-        if(ch === '"'){
-          if(inQuotes && next === '"'){
-            cur += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if(!inQuotes && ch === delim){
-          row.push(cur);
-          cur = '';
-        } else if(!inQuotes && (ch === '\n' || ch === '\r')){
-          if(ch === '\r' && next === '\n') i++;
-          row.push(cur);
-          rows.push(row);
-          row = [];
-          cur = '';
-        } else {
-          cur += ch;
-        }
-      }
-      if(cur.length || row.length){
-        row.push(cur);
-        rows.push(row);
-      }
-      while(rows.length && rows[rows.length-1].every(x => String(x).trim() === '')) rows.pop();
-      return rows;
-    }
-
-    function looksLikeHeader(firstRow){
-      if(!firstRow || !firstRow.length) return false;
-      let nonNumeric = 0;
-      let numeric = 0;
-      for(const cell of firstRow){
-        const t = String(cell ?? '').trim();
-        if(!t) continue;
-        const n = Number(t);
-        if(Number.isFinite(n)) numeric++; else nonNumeric++;
-      }
-      return nonNumeric > 0 && nonNumeric >= numeric;
-    }
-
-    async function handleFile(file){
-      const name = file.name || 'file';
-      const ext = name.toLowerCase().split('.').pop();
-      fileStatus.textContent = `Loaded: ${name}`;
-
-      try{
-        let rows;
-        if(ext === 'csv' || ext === 'txt'){
-          const text = await file.text();
-          const firstLine = text.split(/\r?\n/)[0] ?? '';
-          const delim = detectDelimiter(firstLine);
-          rows = parseCSV(text, delim);
-        } else if(ext === 'xlsx'){
-          if(!window.XLSX){
-            throw new Error('XLSX parser not available. Check your network connection (SheetJS CDN).');
-          }
-          const buf = await file.arrayBuffer();
-          const wb = XLSX.read(buf, {type:'array'});
-          const sheetName = wb.SheetNames[0];
-          const ws = wb.Sheets[sheetName];
-          rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
-        } else {
-          throw new Error('Unsupported file type. Please upload .csv, .txt, or .xlsx.');
-        }
-
-        if(!rows || rows.length < 1) throw new Error('File appears empty.');
-
-        const headerGuess = looksLikeHeader(rows[0]);
-        state.parsedFile = { rows, headerGuess, filename: name };
-
-        openColumnPicker();
-      } catch(e){
-        state.parsedFile = null;
-        fileStatus.textContent = 'No file loaded.';
-        alert(String(e.message || e));
+        return { status:'err', message:String(e.message || e), out:null, notes: row.notes };
       }
     }
 
@@ -1449,7 +1190,7 @@
       keys.forEach((k, idx) => {
         const m = fieldMeta(k);
         const div = document.createElement('div');
-        div.className = 'min-w-[220px] flex-1';
+        div.className = 'min-w-0';
         div.innerHTML = `
           <div class="label">${escapeHtml(m.label)}</div>
           <select id="sel-${k}" class="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"></select>
@@ -1467,10 +1208,7 @@
         });
       });
 
-      hasHeader.addEventListener('change', () => {
-        openColumnPicker();
-      }, { once: true });
-
+      
       updateColPreview();
       colModalBack.style.display = 'flex';
     }
@@ -1544,6 +1282,305 @@
       zPill.textContent = `Z-value: ${fmt(computeZ())}`;
     }
     init();
+
+    // ---------------------------
+    // Results + upload wiring (keeps functionality stable)
+    // ---------------------------
+    if(!window.__RR_TOOL_BOUND__){
+      window.__RR_TOOL_BOUND__ = true;
+
+      clearResults = function(keepLengthNote){
+        state.results = [];
+        state.lastCsv = '';
+        rowPill.textContent = '0 rows';
+        zPill.textContent = `Z-value: ${fmt(computeZ())}`;
+        copyBtn.disabled = true;
+        dlBtn.disabled = true;
+        if(!keepLengthNote) lengthNote.textContent = '';
+        resultsTable.innerHTML = '<thead><tr><th>Status</th><th>Message</th></tr></thead><tbody><tr><td colspan="2" class="text-slate-500">Run the calculator to see results.</td></tr></tbody>';
+      }
+
+      function tableColumns(){
+        const cols = [{ key:'idx', label:'#' }, { key:'status', label:'Status' }, { key:'message', label:'Message' }];
+        if(state.mode === 'm1'){
+          cols.push({key:'a', label:'a'}, {key:'b', label:'b'}, {key:'c', label:'c'}, {key:'d', label:'d'});
+          cols.push({key:'rr', label:'RR'}, {key:'se', label:'Standard error of log(RR)'}, {key:'lcl', label:'Lower bound'}, {key:'ucl', label:'Upper bound'});
+        } else if(state.mode === 'm2'){
+          cols.push({key:'rr', label:'RR'}, {key:'se', label:'Standard error of log(RR)'});
+          cols.push({key:'lcl', label:'Lower bound'}, {key:'ucl', label:'Upper bound'});
+        } else if(state.mode === 'm3'){
+          cols.push({key:'rr', label:'RR'});
+          if(state.sided === 'two'){
+            cols.push({key:'lcl', label:'Lower bound'}, {key:'ucl', label:'Upper bound'});
+          } else {
+            cols.push({key: state.tail === 'left' ? 'lcl' : 'ucl', label: state.tail === 'left' ? 'Lower bound' : 'Upper bound'});
+          }
+          cols.push({key:'se', label:'Standard error of log(RR)'});
+        }
+        return cols;
+      }
+
+      function asCsvValue(v){
+        if(v === Infinity) return 'Infinity';
+        if(v === -Infinity) return '-Infinity';
+        if(v === null || v === undefined) return '';
+        if(typeof v === 'number' && !Number.isFinite(v)) return '';
+        return String(v);
+      }
+
+      function buildCsv(cols, rows){
+        const header = cols.map(c => c.label).join(',');
+        const lines = rows.map(r => cols.map(c => {
+          const val = r[c.key];
+          const s = asCsvValue(val);
+          const needsQuote = /[\n\r,"]/.test(s);
+          const esc = s.replace(/"/g, '""');
+          return needsQuote ? `"${esc}"` : esc;
+        }).join(','));
+        return [header, ...lines].join('\n');
+      }
+
+      function renderResults(){
+        const cols = tableColumns();
+        const thead = `<thead><tr>${cols.map(c => `<th>${escapeHtml(c.label)}</th>`).join('')}</tr></thead>`;
+        const tbodyRows = (state.results.length ? state.results : []).map(r => {
+          return `<tr>${cols.map(c => {
+            if(c.key === 'status') return `<td>${icon(r.status)}</td>`;
+            if(c.key === 'idx') return `<td>${escapeHtml(String(r.idx))}</td>`;
+            if(c.key === 'message'){
+              const notes = (r.notes && r.notes.length) ? ` <span class="note">(${escapeHtml(r.notes[0])}${r.notes.length>1?'…':''})</span>` : '';
+              return `<td>${escapeHtml(r.message)}${notes}</td>`;
+            }
+            const v = r[c.key];
+            return `<td>${escapeHtml(fmt(typeof v === 'number' ? v : v))}</td>`;
+          }).join('')}</tr>`;
+        }).join('');
+
+        const empty = `<tbody><tr><td colspan="${cols.length}" class="text-slate-500">Run the calculator to see results.</td></tr></tbody>`;
+        resultsTable.innerHTML = thead + `<tbody>${tbodyRows || empty.replace(/^<tbody>|<\/tbody>$/g,'')}</tbody>`;
+
+        state.lastCsv = buildCsv(cols, state.results.map(r => {
+          const out = { ...r };
+          // Ensure numeric fields export as plain numbers/Infinity
+          return out;
+        }));
+
+        copyBtn.disabled = !state.results.length;
+        dlBtn.disabled = !state.results.length;
+        rowPill.textContent = `${state.results.length} row${state.results.length===1?'':'s'}`;
+      }
+
+      runBtn.addEventListener('click', () => {
+        validateFields(true);
+        const keys = requiredFields();
+        const { rows, extras, minLen, maxLen } = alignRows(keys);
+
+        if(!rows.length){
+          clearResults(false);
+          lengthNote.textContent = (maxLen > 0) ? 'No complete rows found. Check inputs for missing/invalid values.' : '';
+          return;
+        }
+
+        // Length mismatch note
+        if(extras.length){
+          const msg = extras.map(e => `${fieldMeta(e.key).label}: ${e.extra} extra item(s) ignored`).join(' · ');
+          lengthNote.textContent = msg;
+        } else {
+          lengthNote.textContent = '';
+        }
+
+        const computed = rows.map(r => {
+          const res = computeRow(r);
+          const base = {
+            idx: r.i + 1,
+            status: res.status,
+            message: res.message,
+            notes: res.notes || []
+          };
+          const out = res.out || {};
+          return { ...base, ...out };
+        });
+
+        state.results = computed;
+        renderResults();
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        try{
+          await navigator.clipboard.writeText(state.lastCsv || '');
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => (copyBtn.textContent = 'Copy to Clipboard'), 1100);
+        } catch {
+          copyBtn.textContent = 'Copy failed';
+          setTimeout(() => (copyBtn.textContent = 'Copy to Clipboard'), 1100);
+        }
+      });
+
+      dlBtn.addEventListener('click', () => {
+        const blob = new Blob([state.lastCsv || ''], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'rr_ci_logse_results.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      resetBtn.addEventListener('click', () => {
+        // Reset state
+        state.mode = 'm1';
+        state.sided = 'two';
+        state.tail = 'left';
+        state.conf = 95;
+        state.cc = false;
+        state.parsedFile = null;
+
+        // Reset UI controls
+        document.getElementById('tab-m1').click();
+        sidedToggle.checked = false;
+        tailToggle.checked = false;
+        tailField.style.display = 'none';
+        confRange.value = '95';
+        confNum.value = '95';
+        ccToggle.checked = false;
+
+        // Clear manual inputs
+        requiredFields().forEach(k => {
+          const el = document.getElementById(`in-${k}`);
+          if(el) el.value = '';
+        });
+
+        // File
+        fileStatus.textContent = 'No file loaded.';
+        fileInput.value = '';
+
+        // Close modals
+        colModalBack.style.display = 'none';
+        infoModalBack.style.display = 'none';
+
+        syncConfidence();
+        updateAssumptions();
+        validateFields(false);
+        clearResults(false);
+      });
+
+      // ---------------------------
+      // File upload parsing
+      // ---------------------------
+      function detectDelimiter(line){
+        const comma = (line.match(/,/g) || []).length;
+        const tab = (line.match(/\t/g) || []).length;
+        const semi = (line.match(/;/g) || []).length;
+        if(tab >= comma && tab >= semi) return '\t';
+        if(semi > comma) return ';';
+        return ',';
+      }
+
+      function parseDelimited(text){
+        const normalized = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const lines = normalized.split('\n').filter(l => l.trim() !== '');
+        if(!lines.length) return [];
+        const delim = detectDelimiter(lines[0]);
+
+        function parseLine(line){
+          // Lightweight CSV/TSV parser with quotes
+          const out = [];
+          let cur = '';
+          let inQ = false;
+          for(let i=0;i<line.length;i++){
+            const ch = line[i];
+            if(ch === '"'){
+              if(inQ && line[i+1] === '"'){ cur += '"'; i++; }
+              else inQ = !inQ;
+            } else if(!inQ && ch === delim){
+              out.push(cur);
+              cur = '';
+            } else {
+              cur += ch;
+            }
+          }
+          out.push(cur);
+          return out.map(x => String(x ?? '').trim());
+        }
+
+        return lines.map(parseLine);
+      }
+
+      async function parseXlsx(file){
+        if(!window.XLSX) throw new Error('XLSX parser not available.');
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type:'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:false, defval:'' });
+        return rows.map(r => (r || []).map(x => String(x ?? '').trim()));
+      }
+
+      async function handleFile(file){
+        if(!file) return;
+        // Clear so selecting the same file again triggers change
+        fileInput.value = '';
+
+        fileStatus.textContent = `Loading: ${file.name}`;
+        const name = file.name.toLowerCase();
+        try{
+          let rows = [];
+          if(name.endsWith('.xlsx')){
+            rows = await parseXlsx(file);
+          } else {
+            const text = await file.text();
+            rows = parseDelimited(text);
+          }
+
+          if(!rows.length) throw new Error('No data found in file.');
+
+          state.parsedFile = {
+            filename: file.name,
+            rows,
+            headerGuess: true
+          };
+
+          fileStatus.textContent = `Loaded: ${file.name} (${rows.length} row${rows.length===1?'':'s'})`;
+          openColumnPicker();
+        } catch(e){
+          state.parsedFile = null;
+          fileStatus.textContent = `Could not load file: ${String(e.message || e)}`;
+        } finally {
+          fileInput.value = '';
+        }
+      }
+
+      // Browse
+      browseBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        fileInput.click();
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        const f = e.target.files && e.target.files[0];
+        if(f) handleFile(f);
+      });
+
+      // Drag & drop
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if(f) handleFile(f);
+      });
+      dropZone.addEventListener('click', (e) => {
+        // Click zone opens picker (still keep Browse button)
+        if(e.target && (e.target.id === 'browseBtn')) return;
+        fileInput.value = '';
+        fileInput.click();
+      });
+
+      // Initialize table state
+      clearResults(false);
+    }
   </script>
 
   <style>
