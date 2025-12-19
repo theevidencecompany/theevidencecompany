@@ -1,8 +1,6 @@
-<!doctype html>
+  <!doctype html>
 <html lang="en">
 <head>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6875139203647113"
-     crossorigin="anonymous"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Confidence interval to log scale standard error for odds ratio</title>
@@ -48,7 +46,6 @@
       }
     });
   </script>
-
   <style>
     :root{
       --brand-primary: #184B44;
@@ -463,7 +460,7 @@
 
   <footer class="border-t border-slate-200 bg-white/60">
     <div class="max-w-6xl mx-auto px-4 py-6 text-center">
-      <div class="hint">Entro.py | Threadminds</div>
+      <div class="hint">© <span id="year"></span> Entro.py | Threadminds</div>
     </div>
   </footer>
 
@@ -627,7 +624,9 @@
     // ---------------------------
     // DOM
     // ---------------------------
-    document.getElementById('year').textContent = String(new Date().getFullYear());
+    // Guarded year injection (also present in HTML)
+    const yearEl = document.getElementById('year');
+    if(yearEl) yearEl.textContent = String(new Date().getFullYear());
 
     const logoImg = document.getElementById('logoImg');
     const logoFallback = document.getElementById('logoFallback');
@@ -965,12 +964,10 @@
               a += 0.5; b += 0.5; c += 0.5; d += 0.5;
               row.notes.push('Applied 0.5 continuity correction (zero cell detected).');
             } else {
-              // Spec: if correction is off and any required denominator becomes zero, cannot compute
               return { status:'err', message:'Cannot compute: at least one 2×2 cell is zero. Enable the continuity correction to proceed.', out:null, notes: ['Zero cell detected.'] };
             }
           }
 
-          // After correction (or if no zeros), require strictly positive cells for log-scale quantities
           if([a,b,c,d].some(x => !(x > 0))) return { status:'err', message:'Cannot compute: 2×2 cells must be > 0 for log-scale OR and standard error.', out:null, notes: row.notes };
 
           const orv = (a*d)/(b*c);
@@ -1141,7 +1138,7 @@
           return fmt(rec[k]);
         }).map(x => {
           const s = String(x ?? '');
-          return /[\n\r,\"]/g.test(s) ? '"' + s.replace(/\"/g,'""') + '"' : s;
+          return /[\n\r,"]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
         });
         csvRows.push(row.join(','));
       });
@@ -1250,6 +1247,8 @@
 
       state.parsedFile = null;
       fileStatus.textContent = 'No file loaded.';
+      // allow re-uploading the same file name after reset
+      fileInput.value = '';
 
       buildManualInputs();
       syncConfidence();
@@ -1400,6 +1399,8 @@
       } catch(e){
         state.parsedFile = null;
         fileStatus.textContent = 'No file loaded.';
+        // allow selecting same file again after a failed parse
+        fileInput.value = '';
         alert(String(e.message || e));
       }
     }
@@ -1453,9 +1454,10 @@
         });
       });
 
-      hasHeader.addEventListener('change', () => {
+      // Avoid accumulating multiple listeners as the user opens this modal repeatedly
+      hasHeader.onchange = () => {
         openColumnPicker();
-      }, { once: true });
+      };
 
       updateColPreview();
       colModalBack.style.display = 'flex';
@@ -1526,6 +1528,14 @@
       buildManualInputs();
       updateAssumptions();
       zPill.textContent = `Z-value: ${fmt(computeZ())}`;
+
+      // Minimal opt-in tests (won't run for end users unless enabled)
+      if(window.__RUN_TESTS__){
+        const z95 = normInv(0.975);
+        console.assert(Math.abs(z95 - 1.959963984540054) < 1e-6, 'normInv sanity check failed');
+        console.assert(fmt(Infinity) === '∞', 'Infinity formatting failed');
+        console.assert(fmt(-Infinity) === '−∞', 'Negative Infinity formatting failed');
+      }
     }
     init();
   </script>
