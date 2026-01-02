@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en" class="page-confidence-interval-to-log-scale-standard-error-for-odds-ratio">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Confidence interval to log scale standard error for odds ratio</title>
+    <link rel="stylesheet" href="styles.css">
+
+  <!-- Inter (300–700) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Tailwind (utilities for layout/spacing) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- SheetJS (for .xlsx) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script src="js/confidence-interval-to-log-scale-standard-error-for-odds-ratio-script-1.js"></script>
+  <meta name="description" content="Convert odds ratio confidence intervals to log scale standard errors in Entro.py.">
+  <meta name="robots" content="index,follow">
+  <meta name="googlebot" content="index,follow">
+  <link rel="canonical" href="https://threadminds.org/entropy/Confidence%20interval%20to%20log%20scale%20standard%20error%20for%20odds%20ratio.html">
+  <link rel="icon" type="image/png" href="threadminds.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="threadminds.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="threadminds.png">
+  <link rel="apple-touch-icon" href="threadminds.png">
+  
+</head>
+
+<body>
+  <header>
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3 min-w-[220px]">
+        <img id="logoImg" src="Entropy.png" alt="Entropy" class="h-[34px] w-auto block" />
+        <div id="logoFallback" class="logo-fallback" aria-hidden="true">
+          <span class="main">Σntr</span><span class="omega">Ω</span><span class="main">.py</span>
+        </div>
+      </div>
+      <a class="btn-secondary" href="Convert Statistical Quantities.html" title="Return to the tools list">
+        <span aria-hidden="true">←</span>
+        <span>Back to Tools</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 pt-6 pb-12">
+    <section class="animate-fade-up" style="animation-delay:.05s">
+      <h1 class="text-3xl text-slate-900 text-center">Confidence interval to log scale standard error for odds ratio</h1>
+      <p class="mt-2 text-base text-slate-500 text-center">Convert 2×2 table counts, odds ratio, confidence intervals, and the standard error on the log scale. Enter comma-separated lists to process multiple rows at once.</p>
+    </section>
+
+    <!-- Assumptions (prominent amber box) -->
+    <section class="tool-card mt-5 animate-fade-up" style="animation-delay:.10s">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-sm font-medium uppercase tracking-[.08em] text-slate-500">Assumptions</div>
+          <div class="hint mt-1">Large-sample approach on the log scale with mode-aware checks.</div>
+        </div>
+        <div class="pill" id="assumeBadge">Mode-specific</div>
+      </div>
+
+      <div class="mt-4 rounded-xl border border-amber-200 bg-amber-100/70 p-4 text-amber-900">
+        <div class="text-sm font-medium">Assumptions</div>
+        <ul id="assumptionList" class="mt-2 list-disc pl-5 text-sm"></ul>
+
+        <div id="ccToggleLine" class="mt-3" style="display:none">
+          <div class="flex items-center gap-3">
+            <div class="relative inline-block w-12 h-6 select-none">
+              <input id="ccToggle" type="checkbox" class="toggle-checkbox" />
+              <label for="ccToggle" class="toggle-label block overflow-hidden h-6 rounded-full"></label>
+            </div>
+            <label for="ccToggle" class="text-sm font-medium">Add 0.5 to all cells (a,b,c,d) when any cell is zero.</label>
+          </div>
+        </div>
+
+        <div class="hint mt-3" id="assumptionWarnings"></div>
+      </div>
+    </section>
+
+    <!-- Main calculator card -->
+    <section class="tool-card mt-6 animate-fade-up" style="animation-delay:.16s">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-sm font-medium uppercase tracking-[.08em] text-slate-500">Calculator</div>
+          <div class="hint mt-1" id="modeBadge">Mode: 2×2 table → OR / SE / CI</div>
+        </div>
+      </div>
+
+      <!-- Mode selector (segmented) -->
+      <div class="mt-4">
+        <div class="label">Mode</div>
+        <div class="mt-2 flex justify-between rounded-full border border-slate-200 bg-slate-100 p-1">
+          <button role="tab" id="tab-m1" aria-selected="true" data-mode="m1" class="flex-1 mx-1 rounded-full bg-white px-3 py-2 text-sm font-medium text-center shadow-sm">2×2 table → OR / SE / CI</button>
+          <button role="tab" id="tab-m2" aria-selected="false" data-mode="m2" class="flex-1 mx-1 rounded-full bg-white px-3 py-2 text-sm font-medium text-center shadow-sm">OR + SE → CI</button>
+          <button role="tab" id="tab-m3" aria-selected="false" data-mode="m3" class="flex-1 mx-1 rounded-full bg-white px-3 py-2 text-sm font-medium text-center shadow-sm">OR + CI → SE</button>
+        </div>
+      </div>
+
+      <!-- Confidence settings -->
+      <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <div class="label">Two-sided / One-sided</div>
+            <button class="btn-secondary px-2" id="infoTwoOne" type="button" aria-label="About two-sided vs one-sided">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 17v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 7h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="mt-2 flex items-center gap-3 flex-wrap">
+            <span class="text-sm font-medium">Two-sided</span>
+            <div class="relative inline-block w-12 h-6 select-none">
+              <input id="sidedToggle" type="checkbox" class="toggle-checkbox" aria-label="One-sided toggle" />
+              <label for="sidedToggle" class="toggle-label block overflow-hidden h-6 rounded-full"></label>
+            </div>
+            <span class="text-sm font-medium">One-sided</span>
+          </div>
+          <div class="hint mt-2">Switch to one-sided if you only need a single bound.</div>
+        </div>
+
+        <div id="tailField" style="display:none">
+          <div class="flex items-center gap-2">
+            <div class="label">Left-tailed / Right-tailed</div>
+            <button class="btn-secondary px-2" id="infoTail" type="button" aria-label="About left-tailed vs right-tailed">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 17v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 7h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="mt-2 flex items-center gap-3 flex-wrap">
+            <span class="text-sm font-medium">Left-tailed</span>
+            <div class="relative inline-block w-12 h-6 select-none">
+              <input id="tailToggle" type="checkbox" class="toggle-checkbox" aria-label="Right-tailed toggle" />
+              <label for="tailToggle" class="toggle-label block overflow-hidden h-6 rounded-full"></label>
+            </div>
+            <span class="text-sm font-medium">Right-tailed</span>
+          </div>
+          <div class="hint mt-2">Pick the direction that matches your one-sided question.</div>
+        </div>
+
+        <div class="md:col-span-2">
+          <div class="label">Confidence level (%)</div>
+          <div class="mt-2 flex items-center gap-3">
+            <input id="confRange" type="range" min="80" max="99.9" step="0.1" value="95" class="w-full" aria-label="Confidence level slider" />
+            <input id="confNum" type="number" min="80" max="99.9" step="0.1" value="95" class="w-28 rounded-lg border border-slate-200 px-3 py-2 text-sm" aria-label="Confidence level numeric" />
+          </div>
+          <div class="hint mt-2">Valid range: 80% to 99.9%.</div>
+        </div>
+      </div>
+
+      <div class="mt-6 h-px bg-slate-200"></div>
+
+      <!-- Inputs + Results (responsive split inside main card) -->
+      <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+        <!-- Inputs -->
+        <div class="min-w-0">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-sm font-medium uppercase tracking-[.08em] text-slate-500">Input methods</div>
+              <div class="hint mt-1">Manual entry or file upload</div>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <div class="label">Manual entry</div>
+            <div class="hint mt-1">Enter comma-separated lists. Rows are aligned by position (1st with 1st, etc.).</div>
+            <div id="manualInputs" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            <div id="fieldErrors" class="hint mt-2" aria-live="polite"></div>
+          </div>
+
+          <div id="dropZone" class="mt-5 rounded-xl border-2 border-dashed border-slate-300 bg-white/60 p-4" tabindex="0" role="button" aria-label="Upload a CSV, TXT, or XLSX file">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div class="text-sm font-medium text-slate-900">Drag & drop a .csv, .txt, or .xlsx file</div>
+                <div class="hint mt-1">Upload → parse → choose columns → populate inputs.</div>
+              </div>
+              <button class="btn-secondary" type="button" id="browseBtn">Browse files</button>
+              <input class="sr-only" id="fileInput" type="file" accept=".csv,.txt,.xlsx" />
+            </div>
+            <div class="hint mt-2" id="fileStatus">No file loaded.</div>
+          </div>
+
+          <div class="mt-5 flex flex-col sm:flex-row gap-3">
+            <button class="btn-brand" type="button" id="runBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <path d="M13 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Run
+            </button>
+            <button class="btn-danger" type="button" id="resetBtn">Reset</button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="min-w-0">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-sm font-medium uppercase tracking-[.08em] text-slate-500">Results</div>
+              <div class="hint mt-1">Per-row output with status icons</div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex flex-wrap gap-2">
+              <span class="pill" id="rowPill">0 rows</span>
+              <span class="pill" id="zPill">Z-value: —</span>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <button class="btn-secondary" type="button" id="copyBtn" disabled>Copy to Clipboard</button>
+              <button class="btn-secondary" type="button" id="dlBtn" disabled>Download CSV</button>
+            </div>
+          </div>
+
+          <div class="mt-4 table-wrap">
+            <table id="resultsTable" aria-label="Results table">
+              <thead><tr><th>Status</th><th>Message</th></tr></thead>
+              <tbody><tr><td colspan="2" class="text-slate-500">Run the calculator to see results.</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="hint mt-3" id="lengthNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- References (plain bullets, no equations) -->
+    <section class="tool-card-2 mt-6 animate-fade-up" style="animation-delay:.22s">
+      <div class="text-sm font-medium uppercase tracking-[.08em] text-slate-500">References</div>
+      <ul class="mt-3 list-disc pl-5 text-base">
+        <li>Chapter 6: Choosing effect measures and computing estimates of effect | Cochrane. (n.d.). Retrieved December 18, 2025, from https://www.cochrane.org/authors/handbooks-and-manuals/handbook/current/chapter-06</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">Entropy | © 2025 Threadminds. All rights reserved.</div>
+  </footer>
+
+  <!-- Column selection modal -->
+  <div class="modal-back modal-overlay" id="colModalBack" role="dialog" aria-modal="true" aria-label="Column selection">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Choose columns to import</div>
+        <button class="btn-secondary" type="button" id="colClose">Close</button>
+      </div>
+      <div class="p-4">
+        <p class="text-base text-slate-500">Select which file columns should populate the current mode’s input lists.</p>
+
+        <div class="mt-3 flex items-center gap-3 flex-wrap">
+          <label class="text-sm text-slate-700 flex items-center gap-2">
+            <input type="checkbox" id="hasHeader" checked>
+            Treat first row as headers
+          </label>
+          <span class="hint" id="filePreviewMeta"></span>
+        </div>
+
+        <div id="colSelectors" class="mt-4 flex flex-wrap gap-3 items-end"></div>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button class="btn-brand" type="button" id="applyCols">Use selected columns</button>
+          <button class="btn-secondary" type="button" id="colCancel">Cancel</button>
+        </div>
+
+        <div class="hint mt-3" id="colPreview"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info modal (EXACT image names + EXACT text) -->
+  <div class="modal-back modal-overlay" id="infoModalBack" role="dialog" aria-modal="true" aria-label="Information">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="infoTitle">Info</div>
+        <button class="btn-secondary" type="button" id="infoClose">Close</button>
+      </div>
+      <div class="p-4">
+        <div class="modal-img"><img id="infoImg" alt="Infographic" src="" /></div>
+        <p class="mt-3 text-base" id="infoText"></p>
+      </div>
+    </div>
+  </div>
+
+  
+
+  <script src="js/confidence-interval-to-log-scale-standard-error-for-odds-ratio-script-2.js"></script>
+</body>
+</html>
