@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://threadminds.org/entropy/sitemap.xml
